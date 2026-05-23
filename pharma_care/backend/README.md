@@ -9,7 +9,6 @@ cd backend
 npm install
 cp .env.example .env   # fill in Supabase URL + keys
 ```
-
 In the Supabase dashboard, open the SQL editor and run `supabase/schema.sql` once.
 
 ## Run
