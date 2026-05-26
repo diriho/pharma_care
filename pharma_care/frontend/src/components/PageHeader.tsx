@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+// page header component function
 export default function PageHeader({
   title,
   subtitle,

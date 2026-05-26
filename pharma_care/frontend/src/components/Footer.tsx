@@ -1,4 +1,5 @@
 export default function Footer() {
+  // footer component with the app name and copyright
   return (
     <footer className="bg-white border-t border-[#f0f0f0] py-10">
       <div className="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">

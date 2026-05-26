@@ -19,20 +19,27 @@ export default function Overview() {
   const [a, setA] = useState<Analytics | null>(null);
   const [n, setN] = useState<Alerts["alerts"]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [analytics, notif] = await Promise.all([
+        api<Analytics>("/data/analytics"),
+        api<Alerts>("/data/notifications"),
+      ]);
+      setA(analytics);
+      setN(notif.alerts);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    (async () => {
-      try {
-        const [analytics, notif] = await Promise.all([
-          api<Analytics>("/data/analytics"),
-          api<Alerts>("/data/notifications"),
-        ]);
-        setA(analytics);
-        setN(notif.alerts);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    load();
   }, []);
 
   const currency = pharmacy?.currency || "FBU";
@@ -43,6 +50,15 @@ export default function Overview() {
         title={`Bienvenue, ${pharmacy?.name || "Pharmacie"}`}
         subtitle="Vue d'ensemble en temps réel de votre officine."
       />
+
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-3">
+          <span>Erreur de chargement : {error}</span>
+          <button onClick={load} className="ml-auto underline font-semibold">
+            Réessayer
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-slate-500">Chargement…</p>

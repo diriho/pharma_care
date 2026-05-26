@@ -46,20 +46,26 @@ export default function Suppliers() {
   const [orders, setOrders] = useState<RestockOrder[]>([]);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [editing, setEditing] = useState<Partial<Supplier> | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [orderModal, setOrderModal] = useState<{
     supplierId: string;
     items: OrderLine[];
   } | null>(null);
 
   async function load() {
-    const [s, o, m] = await Promise.all([
-      api<Supplier[]>("/data/suppliers"),
-      api<RestockOrder[]>("/data/restock-orders"),
-      api<Medicine[]>("/data/medicines"),
-    ]);
-    setSuppliers(s);
-    setOrders(o);
-    setMedicines(m);
+    setError(null);
+    try {
+      const [s, o, m] = await Promise.all([
+        api<Supplier[]>("/data/suppliers"),
+        api<RestockOrder[]>("/data/restock-orders"),
+        api<Medicine[]>("/data/medicines"),
+      ]);
+      setSuppliers(s);
+      setOrders(o);
+      setMedicines(m);
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
   useEffect(() => {
     load();
@@ -147,6 +153,15 @@ export default function Suppliers() {
           </button>
         }
       />
+
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-3">
+          <span>Erreur de chargement : {error}</span>
+          <button onClick={load} className="ml-auto underline font-semibold">
+            Réessayer
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section className="bg-white rounded-2xl border border-slate-200 p-4">

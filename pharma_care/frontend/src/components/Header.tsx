@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
+// header component with the app name and navigation links
 export default function Header() {
   const { user } = useAuth();
   const navigate = useNavigate();

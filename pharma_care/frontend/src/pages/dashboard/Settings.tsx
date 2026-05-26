@@ -18,7 +18,7 @@ type SettingsForm = {
 };
 
 export default function Settings() {
-  const { pharmacy, refreshPharmacy } = useAuth();
+  const { pharmacy, pharmacyLoading, pharmacyError, refreshPharmacy } = useAuth();
   const [form, setForm] = useState<SettingsForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -72,7 +72,27 @@ export default function Settings() {
     );
   }
 
-  if (!form) return <p className="text-slate-500">Chargement…</p>;
+  if (!form) {
+    if (pharmacyLoading) return <p className="text-slate-500">Chargement…</p>;
+    if (pharmacyError) {
+      return (
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-3">
+          <span>Erreur de chargement du profil pharmacie : {pharmacyError}</span>
+          <button
+            onClick={() => refreshPharmacy()}
+            className="ml-auto underline font-semibold"
+          >
+            Réessayer
+          </button>
+        </div>
+      );
+    }
+    return (
+      <p className="text-slate-500">
+        Aucun profil pharmacie lié à ce compte. Contactez l'administrateur.
+      </p>
+    );
+  }
 
   return (
     <div>

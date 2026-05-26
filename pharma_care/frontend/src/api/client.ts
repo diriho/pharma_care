@@ -1,20 +1,23 @@
 import { supabase } from "../lib/supabase";
 
-const BASE = (import.meta.env.VITE_API_BASE as string) || "/api";
+const BASE = ((import.meta as any).env.VITE_API_BASE as string) || "/api";
 
+// get the athorization header with the current access token
 async function authHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// get the api content
 export async function api<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const auth = await authHeader();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(await authHeader()),
+    ...auth,
     ...((options.headers as Record<string, string>) || {}),
   };
   const res = await fetch(`${BASE}${path}`, { ...options, headers });
@@ -26,6 +29,9 @@ export async function api<T = unknown>(
     body = text;
   }
   if (!res.ok) {
+    if (res.status === 401 && auth.Authorization) {
+      await supabase.auth.signOut().catch(() => {});
+    }
     const message =
       (body && typeof body === "object" && "error" in body && (body as { error?: string }).error) ||
       `Request failed (${res.status})`;
@@ -34,10 +40,16 @@ export async function api<T = unknown>(
   return body as T;
 }
 
+// downlaod that datafile from the api
 export async function apiDownload(path: string, filename: string): Promise<void> {
   const headers = await authHeader();
   const res = await fetch(`${BASE}${path}`, { headers });
-  if (!res.ok) throw new Error(`Téléchargement échoué (${res.status})`);
+  if (!res.ok) {
+    if (res.status === 401 && headers.Authorization) {
+      await supabase.auth.signOut().catch(() => {});
+    }
+    throw new Error(`Téléchargement échoué (${res.status})`);
+  }
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

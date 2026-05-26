@@ -19,19 +19,41 @@ export default function Analytics() {
   const { pharmacy } = useAuth();
   const [data, setData] = useState<Analytics | null>(null);
   const [meds, setMeds] = useState<Medicine[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
       const [a, m] = await Promise.all([
         api<Analytics>("/data/analytics"),
         api<Medicine[]>("/data/medicines"),
       ]);
       setData(a);
       setMeds(m);
-    })();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
   }, []);
 
-  if (!data) return <p className="text-slate-500">Chargement…</p>;
+  if (loading) return <p className="text-slate-500">Chargement…</p>;
+  if (error || !data) {
+    return (
+      <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-3">
+        <span>Erreur de chargement des analyses : {error || "données indisponibles"}</span>
+        <button onClick={load} className="ml-auto underline font-semibold">
+          Réessayer
+        </button>
+      </div>
+    );
+  }
 
   const currency = pharmacy?.currency || "FBU";
   const days = Object.entries(data.salesByDay).sort((a, b) =>

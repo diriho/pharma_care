@@ -45,11 +45,13 @@ export default function Inventory() {
   const [meds, setMeds] = useState<Medicine[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Medicine> | null>(null);
   const [query, setQuery] = useState("");
 
   async function load() {
     setLoading(true);
+    setError(null);
     try {
       const [m, s] = await Promise.all([
         api<Medicine[]>("/data/medicines"),
@@ -57,6 +59,8 @@ export default function Inventory() {
       ]);
       setMeds(m);
       setSuppliers(s);
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -129,6 +133,15 @@ export default function Inventory() {
           </button>
         }
       />
+
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-3">
+          <span>Erreur de chargement : {error}</span>
+          <button onClick={load} className="ml-auto underline font-semibold">
+            Réessayer
+          </button>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="p-4 border-b border-slate-100">

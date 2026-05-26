@@ -26,8 +26,7 @@ function ProtectedRoute({ children }: { children: React.ReactElement }) {
 }
 
 function PublicOnly({ children }: { children: React.ReactElement }) {
-  const { user, loading } = useAuth();
-  if (loading) return null;
+  const { user } = useAuth();
   if (user) return <Navigate to="/dashboard" replace />;
   return children;
 }
@@ -35,7 +34,12 @@ function PublicOnly({ children }: { children: React.ReactElement }) {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route

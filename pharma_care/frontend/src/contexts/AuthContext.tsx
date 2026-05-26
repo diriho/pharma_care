@@ -11,6 +11,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { api } from "../api/client";
 
+// type definitions for this app
 export type Pharmacy = {
   user_id: string;
   name: string;
@@ -47,6 +48,8 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   pharmacy: Pharmacy | null;
+  pharmacyLoading: boolean;
+  pharmacyError: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -59,25 +62,38 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
+  const [pharmacyLoading, setPharmacyLoading] = useState(false);
+  const [pharmacyError, setPharmacyError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadPharmacy = useCallback(async () => {
+    setPharmacyLoading(true);
+    setPharmacyError(null);
     try {
       const data = await api<{ user: User; pharmacy: Pharmacy | null }>("/auth/me");
       setPharmacy(data.pharmacy);
-    } catch {
+    } catch (err) {
       setPharmacy(null);
+      setPharmacyError((err as Error).message);
+    } finally {
+      setPharmacyLoading(false);
     }
   }, []);
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      if (data.session) await loadPharmacy();
-      setLoading(false);
-    });
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(data.session);
+        if (data.session) await loadPharmacy();
+      } catch {
+        // session lookup failed — fall through to mark loading complete
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
     const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, newSession) => {
       setSession(newSession);
       if (newSession) await loadPharmacy();
@@ -99,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         access_token: res.session.access_token,
         refresh_token: res.session.refresh_token,
       });
+      // Small delay to ensure session is persisted locally before fetching pharmacy data
+      await new Promise(resolve => setTimeout(resolve, 100));
       await loadPharmacy();
     },
     [loadPharmacy]
@@ -114,6 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         access_token: res.session.access_token,
         refresh_token: res.session.refresh_token,
       });
+      // Small delay to ensure session is persisted locally before fetching pharmacy data
+      await new Promise(resolve => setTimeout(resolve, 100));
       await loadPharmacy();
     },
     [loadPharmacy]
@@ -141,18 +161,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       session,
       pharmacy,
+      pharmacyLoading,
+      pharmacyError,
       login,
       signup,
       logout,
       deleteAccount,
       refreshPharmacy: loadPharmacy,
     }),
-    [loading, session, pharmacy, login, signup, logout, deleteAccount, loadPharmacy]
+    [loading, session, pharmacy, pharmacyLoading, pharmacyError, login, signup, logout, deleteAccount, loadPharmacy]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// get the current authenticated user and pharmacy info
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

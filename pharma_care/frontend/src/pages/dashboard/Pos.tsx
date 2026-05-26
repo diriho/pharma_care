@@ -25,14 +25,20 @@ export default function Pos() {
   const [query, setQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const [m, p] = await Promise.all([
-      api<Medicine[]>("/data/medicines"),
-      api<Patient[]>("/data/patients"),
-    ]);
-    setMeds(m);
-    setPatients(p);
+    setError(null);
+    try {
+      const [m, p] = await Promise.all([
+        api<Medicine[]>("/data/medicines"),
+        api<Patient[]>("/data/patients"),
+      ]);
+      setMeds(m);
+      setPatients(p);
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
   useEffect(() => {
@@ -117,6 +123,14 @@ export default function Pos() {
         title="Point de Vente"
         subtitle="Enregistrez les ventes en quelques clics. Le stock est mis à jour automatiquement."
       />
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-3">
+          <span>Erreur de chargement : {error}</span>
+          <button onClick={load} className="ml-auto underline font-semibold">
+            Réessayer
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4">
           <input
