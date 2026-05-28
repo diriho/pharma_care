@@ -69,23 +69,21 @@ router.post("/signup", async (req: Request, res: Response) => {
   }
 
   const userId = created.user.id;
-  const settingsRow = {
-    user_id: userId,
-    name: pharmacy.name,
-    address: pharmacy.address,
-    commune: pharmacy.commune,
-    province: pharmacy.province,
-    phone: pharmacy.phone,
-    currency: pharmacy.currency || "FBU",
-    nif: pharmacy.nif || null,
-    rc: pharmacy.rc || null,
-    expiry_alert_months: Number(pharmacy.expiryAlertMonths),
-    low_stock_alert_level: Number(pharmacy.lowStockAlertLevel),
-  };
 
-  const { error: settingsError } = await admin
-    .from("pharmacy_settings")
-    .insert(settingsRow);
+  // Use RPC to create pharmacy settings (bypasses RLS when called with service role)
+  const { error: settingsError } = await admin.rpc("create_pharmacy_settings", {
+    p_user_id: userId,
+    p_name: pharmacy.name,
+    p_address: pharmacy.address,
+    p_commune: pharmacy.commune,
+    p_province: pharmacy.province,
+    p_phone: pharmacy.phone,
+    p_currency: pharmacy.currency || "FBU",
+    p_nif: pharmacy.nif || null,
+    p_rc: pharmacy.rc || null,
+    p_expiry_alert_months: Number(pharmacy.expiryAlertMonths),
+    p_low_stock_alert_level: Number(pharmacy.lowStockAlertLevel),
+  });
 
   if (settingsError) {
     await admin.auth.admin.deleteUser(userId).catch(() => {});

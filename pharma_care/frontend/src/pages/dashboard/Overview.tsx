@@ -25,14 +25,18 @@ export default function Overview() {
     setLoading(true);
     setError(null);
     try {
+      console.log("Loading analytics and notifications...");
       const [analytics, notif] = await Promise.all([
         api<Analytics>("/data/analytics"),
         api<Alerts>("/data/notifications"),
       ]);
+      console.log("Data loaded:", { analytics, notif });
       setA(analytics);
       setN(notif.alerts);
     } catch (err) {
-      setError((err as Error).message);
+      const errorMsg = (err as Error).message;
+      console.error("Error loading data:", errorMsg);
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

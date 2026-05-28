@@ -127,6 +127,30 @@ create or replace function increment_medicine_stock(
    where id = p_medicine_id and user_id = p_user;
 $$;
 
+create or replace function create_pharmacy_settings(
+  p_user_id uuid,
+  p_name text,
+  p_address text,
+  p_commune text,
+  p_province text,
+  p_phone text,
+  p_currency text DEFAULT 'FBU',
+  p_nif text DEFAULT NULL,
+  p_rc text DEFAULT NULL,
+  p_expiry_alert_months integer DEFAULT 6,
+  p_low_stock_alert_level integer DEFAULT 15
+) returns void language plpgsql security definer as $$
+begin
+  insert into pharmacy_settings (
+    user_id, name, address, commune, province, phone, currency, 
+    nif, rc, expiry_alert_months, low_stock_alert_level
+  ) values (
+    p_user_id, p_name, p_address, p_commune, p_province, p_phone, 
+    p_currency, p_nif, p_rc, p_expiry_alert_months, p_low_stock_alert_level
+  );
+end;
+$$;
+
 -- ============== RLS ==============
 
 alter table pharmacy_settings enable row level security;
