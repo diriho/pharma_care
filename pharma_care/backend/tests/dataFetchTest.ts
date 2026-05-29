@@ -1,59 +1,33 @@
-import { createClient } from '@supabase/supabase-js'
-import { response } from 'express';
+import 'dotenv/config';
+import { createClient } from '@supabase/supabase-js';
 
-// test the if a user can sign up
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+// test if you can fetch data from the database
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+console.log(process.env.MOCK_USER_ID);
 
-const { data, error } = await supabase.auth.signUp({
-    email: 'diriho0407@gmail.com',
-    password: 'ahanihe',
-})
-  
+if (!supabaseUrl || !supabaseKey) { 
+    throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY in environment variables");
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+const { data, error } = await supabase.from('pharmacy_settings')
+    .select(' * ');
+    //.eq('user_id', string(process.env.MOCK_USER_ID));
+
 if (error) {
     const response = {
         status: 'Error Status 401',
-        message: 'Error signing up',
+        message: 'Error fetching data',
         error: error.message
     }
     console.log(response);
 } else {
     const response = {
         status: 'Success Status 200',
-        message: 'User signed up successfully',
-        user: data.user
+        message: 'Data fetched successfully',
+        data: data
     }
     console.log(response);
-}
-
-// test if you can extract the user infromation from the access token
-const { data, error } = await supabase.auth.signInWithPassword({
-    email: process.env.MOCK_USER_EMAIL!,
-    password: process.env.MOCK_USER_PASSWORD!
-})
-if (error) {
-    const response = {
-        status: 'Error Status 401',
-        message: 'Error signing in',
-        error: error.message
-
-    }
-    console.log(response);
-} else {
-    const { data: userData, error: userError } = await supabase.auth.getUser(data.session!.access_token)
-    if (userError) {
-        const response = {
-            status: 'Error Status 401',
-            message: 'Error fetching user data',
-            error: userError.message
-
-        }
-        console.log(response);
-    } else {
-        const response = {
-            status: 'Success Status 200',
-            message: 'User data fetched successfully',
-            user: userData.user
-        }
-        console.log(response);
-    }
-}
+}   
