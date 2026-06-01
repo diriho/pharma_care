@@ -10,11 +10,16 @@ if (!supabaseUrl || !supabaseKey) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY in environment variables");
 }
 
+
+
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-const { data, error } = await supabase.from('pharmacy_settings')
-    .select(' * ');
-    //.eq('user_id', string(process.env.MOCK_USER_ID));
+
+
+
+let { data: pharmacy_settings, error } = await supabase
+  .from('pharmacy_settings')
+  .select('*')
 
 if (error) {
     const response = {
@@ -27,7 +32,7 @@ if (error) {
     const response = {
         status: 'Success Status 200',
         message: 'Data fetched successfully',
-        data: data
+        data: pharmacy_settings
     }
     console.log(response);
 }   
