@@ -21,6 +21,7 @@ function ProtectedRoute({ children }: { children: React.ReactElement }) {
       </div>
     );
   }
+  
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }

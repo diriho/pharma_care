@@ -10,12 +10,12 @@ if (!supabaseUrl || !supabaseKey) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY in environment variables");
 }
 
-
-
+// Create a Supabase client instance and aunthenticate the user to get their database rows
 const supabase = createClient(supabaseUrl, supabaseKey)
-
-
-
+const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email: process.env.MOCK_USER_EMAIL!,
+    password: process.env.MOCK_USER_PASSWORD!
+})
 
 let { data: pharmacy_settings, error } = await supabase
   .from('pharmacy_settings')

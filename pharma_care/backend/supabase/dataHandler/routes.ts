@@ -201,110 +201,123 @@ interface Sale {
 }
 
 router.get("/notifications", async (req: Request, res: Response) => {
-  const userId = (req as AuthedRequest).user.id;
-  const { data: settings } = await admin
-    .from("pharmacy_settings")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
-  const lowStockLevel = settings?.low_stock_alert_level ?? 15;
-  const expiryMonths = settings?.expiry_alert_months ?? 6;
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const { data: settings } = await admin
+      .from("pharmacy_settings")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+    const lowStockLevel = settings?.low_stock_alert_level ?? 15;
+    const expiryMonths = settings?.expiry_alert_months ?? 6;
 
-  const { data: meds } = await admin
-    .from("medicines")
-    .select("*")
-    .eq("user_id", userId);
+    const { data: meds } = await admin
+      .from("medicines")
+      .select("*")
+      .eq("user_id", userId);
 
-  const now = new Date();
-  const cutoff = new Date(now);
-  cutoff.setMonth(cutoff.getMonth() + expiryMonths);
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setMonth(cutoff.getMonth() + expiryMonths);
 
-  const alerts: Array<{
-    type: string;
-    severity: string;
-    medicine_id: string;
-    message: string;
-  }> = [];
-  for (const m of (meds || []) as Medicine[]) {
-    const threshold = m.min_stock_level ?? lowStockLevel;
-    if (m.stock <= threshold) {
-      alerts.push({
-        type: "low_stock",
-        severity: m.stock === 0 ? "critical" : "warning",
-        medicine_id: m.id,
-        message: `${m.name} – stock bas (${m.stock} unités)`,
-      });
-    }
-    if (m.expiry_date) {
-      const exp = new Date(m.expiry_date);
-      if (exp <= now) {
+    const alerts: Array<{
+      type: string;
+      severity: string;
+      medicine_id: string;
+      message: string;
+    }> = [];
+    for (const m of (meds || []) as Medicine[]) {
+      const threshold = m.min_stock_level ?? lowStockLevel;
+      if (m.stock <= threshold) {
         alerts.push({
-          type: "expired",
-          severity: "critical",
+          type: "low_stock",
+          severity: m.stock === 0 ? "critical" : "warning",
           medicine_id: m.id,
-          message: `${m.name} – périmé depuis le ${m.expiry_date}`,
-        });
-      } else if (exp <= cutoff) {
-        alerts.push({
-          type: "expiring_soon",
-          severity: "warning",
-          medicine_id: m.id,
-          message: `${m.name} – expire le ${m.expiry_date}`,
+          message: `${m.name} – stock bas (${m.stock} unités)`,
         });
       }
+      if (m.expiry_date) {
+        const exp = new Date(m.expiry_date);
+        if (exp <= now) {
+          alerts.push({
+            type: "expired",
+            severity: "critical",
+            medicine_id: m.id,
+            message: `${m.name} – périmé depuis le ${m.expiry_date}`,
+          });
+        } else if (exp <= cutoff) {
+          alerts.push({
+            type: "expiring_soon",
+            severity: "warning",
+            medicine_id: m.id,
+            message: `${m.name} – expire le ${m.expiry_date}`,
+          });
+        }
+      }
     }
+    res.json({ alerts, lowStockLevel, expiryMonths });
+  } catch (err) {
+    console.error("[notifications] Error:", err);
+    res.status(500).json({ error: (err as Error).message || "Notifications fetch failed" });
   }
-  res.json({ alerts, lowStockLevel, expiryMonths });
 });
 
 router.get("/analytics", async (req: Request, res: Response) => {
-  const userId = (req as AuthedRequest).user.id;
-  const [medsRes, salesRes, patientsRes, suppliersRes] = await Promise.all([
-    scoped("medicines", userId),
-    scoped("sales", userId),
-    scoped("patients", userId),
-    scoped("suppliers", userId),
-  ]);
-  const meds = (medsRes.data || []) as Medicine[];
-  const sales = (salesRes.data || []) as Sale[];
-  const patients = patientsRes.data || [];
-  const suppliers = suppliersRes.data || [];
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    console.log("[analytics] Fetching analytics for user:", userId);
+    const [medsRes, salesRes, patientsRes, suppliersRes] = await Promise.all([
+      scoped("medicines", userId),
+      scoped("sales", userId),
+      scoped("patients", userId),
+      scoped("suppliers", userId),
+    ]);
+    const meds = (medsRes.data || []) as Medicine[];
+    const sales = (salesRes.data || []) as Sale[];
+    const patients = patientsRes.data || [];
+    const suppliers = suppliersRes.data || [];
 
-  const inventoryValue = meds.reduce(
-    (sum, m) => sum + (m.stock || 0) * (m.purchase_price || 0),
-    0
-  );
-  const retailValue = meds.reduce(
-    (sum, m) => sum + (m.stock || 0) * (m.selling_price || 0),
-    0
-  );
-  const totalRevenue = sales.reduce((sum, s) => sum + (s.total || 0), 0);
-  const salesByDay: Record<string, number> = {};
-  for (const s of sales) {
-    const day = (s.created_at || "").slice(0, 10);
-    if (!day) continue;
-    salesByDay[day] = (salesByDay[day] || 0) + (s.total || 0);
-  }
-  const topMedicines: Record<string, number> = {};
-  for (const s of sales) {
-    for (const it of s.items || []) {
-      topMedicines[it.medicine_id] =
-        (topMedicines[it.medicine_id] || 0) + (it.quantity || 0);
+    const inventoryValue = meds.reduce(
+      (sum, m) => sum + (m.stock || 0) * (m.purchase_price || 0),
+      0
+    );
+    const retailValue = meds.reduce(
+      (sum, m) => sum + (m.stock || 0) * (m.selling_price || 0),
+      0
+    );
+    const totalRevenue = sales.reduce((sum, s) => sum + (s.total || 0), 0);
+    const salesByDay: Record<string, number> = {};
+    for (const s of sales) {
+      const day = (s.created_at || "").slice(0, 10);
+      if (!day) continue;
+      salesByDay[day] = (salesByDay[day] || 0) + (s.total || 0);
     }
+    const topMedicines: Record<string, number> = {};
+    for (const s of sales) {
+      for (const it of s.items || []) {
+        topMedicines[it.medicine_id] =
+          (topMedicines[it.medicine_id] || 0) + (it.quantity || 0);
+      }
+    }
+    const response = {
+      counts: {
+        medicines: meds.length,
+        patients: patients.length,
+        suppliers: suppliers.length,
+        sales: sales.length,
+      },
+      inventoryValue,
+      retailValue,
+      totalRevenue,
+      salesByDay,
+      topMedicines,
+    };
+    console.log("[analytics] Returning response:", response);
+    res.json(response);
+  } catch (err) {
+    console.error("[analytics] Error:", err);
+    res.status(500).json({ error: (err as Error).message || "Analytics fetch failed" });
   }
-  res.json({
-    counts: {
-      medicines: meds.length,
-      patients: patients.length,
-      suppliers: suppliers.length,
-      sales: sales.length,
-    },
-    inventoryValue,
-    retailValue,
-    totalRevenue,
-    salesByDay,
-    topMedicines,
-  });
 });
 
 router.get("/export", async (req: Request, res: Response) => {

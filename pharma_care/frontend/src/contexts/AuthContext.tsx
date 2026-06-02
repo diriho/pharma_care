@@ -87,17 +87,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data } = await supabase.auth.getSession();
         if (!mounted) return;
         setSession(data.session);
-        if (data.session) await loadPharmacy();
-      } catch {
-        // session lookup failed — fall through to mark loading complete
+        if (data.session) {
+          try {
+            await loadPharmacy();
+          } catch (err) {
+            console.error("[AuthContext] Failed to load pharmacy:", err);
+          }
+        }
+      } catch (err) {
+        console.error("[AuthContext] Session lookup failed:", err);
       } finally {
         if (mounted) setLoading(false);
       }
     })();
     const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, newSession) => {
       setSession(newSession);
-      if (newSession) await loadPharmacy();
-      else setPharmacy(null);
+      if (newSession) {
+        try {
+          await loadPharmacy();
+        } catch (err) {
+          console.error("[AuthContext] Failed to load pharmacy on auth change:", err);
+        }
+      } else {
+        setPharmacy(null);
+      }
     });
     return () => {
       mounted = false;

@@ -1,10 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 // header component with the app name and navigation links
 export default function Header() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   return (
     <header className="fixed top-0 left-0 right-0 z-40 backdrop-blur bg-white/80 border-b border-[#f0f0f0]">
       <div className="max-w-[1200px] mx-auto flex items-center justify-between px-6 py-4">
@@ -42,12 +41,12 @@ export default function Header() {
 
         <div className="flex items-center gap-3">
           {user ? (
-            <button
-              onClick={() => navigate("/dashboard")}
+            <Link
+              to="/dashboard"
               className="px-5 py-2 rounded-full bg-[#063b1e] text-[#6eff8a] font-semibold text-sm hover:bg-black transition-colors"
             >
               Tableau de bord
-            </button>
+            </Link>
           ) : (
             <>
               <Link

@@ -12,6 +12,7 @@ export async function requireAuth(
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) {

@@ -25,19 +25,21 @@ export default function Overview() {
     setLoading(true);
     setError(null);
     try {
-      console.log("Loading analytics and notifications...");
-      const [analytics, notif] = await Promise.all([
-        api<Analytics>("/data/analytics"),
-        api<Alerts>("/data/notifications"),
-      ]);
-      console.log("Data loaded:", { analytics, notif });
+      console.log("[Overview] Starting data fetch...");
+      console.log("[Overview] About to call api for analytics and notifications");
+      const analyticsPromise = api<Analytics>("/data/analytics");
+      const notificationsPromise = api<Alerts>("/data/notifications");
+      console.log("[Overview] Promises created, waiting for both...");
+      const [analytics, notif] = await Promise.all([analyticsPromise, notificationsPromise]);
+      console.log("[Overview] Data loaded successfully:", { analytics, notif });
       setA(analytics);
       setN(notif.alerts);
     } catch (err) {
       const errorMsg = (err as Error).message;
-      console.error("Error loading data:", errorMsg);
+      console.error("[Overview] Error loading data:", errorMsg);
       setError(errorMsg);
     } finally {
+      console.log("[Overview] Setting loading to false");
       setLoading(false);
     }
   }

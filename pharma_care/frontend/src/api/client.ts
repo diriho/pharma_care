@@ -4,23 +4,39 @@ const BASE = ((import.meta as any).env.VITE_API_BASE as string) || "/api";
 
 // get the athorization header with the current access token
 async function authHeader(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
-  let token = data.session?.access_token;
+  console.log("[authHeader] Starting...");
+  try {
+    console.log("[authHeader] Calling supabase.auth.getSession()...");
+    const { data } = await supabase.auth.getSession();
+    console.log("[authHeader] getSession() completed, data:", data);
+    let token = data.session?.access_token;
 
-  // If no token from Supabase, try to get it directly from localStorage
-  if (!token) {
-    try {
-      const sessionStr = localStorage.getItem("sb-kqzdqanvlsxlpakmuzpt-auth-token");
-      if (sessionStr) {
-        const session = JSON.parse(sessionStr);
-        token = session?.access_token;
+    // If no token from Supabase, try to get it directly from localStorage
+    if (!token) {
+      console.log("[authHeader] No token from getSession, checking localStorage...");
+      try {
+        const sessionStr = localStorage.getItem("sb-kqzdqanvlsxlpakmuzpt-auth-token");
+        if (sessionStr) {
+          const session = JSON.parse(sessionStr);
+          token = session?.access_token;
+          console.log("[authHeader] Found token in localStorage");
+        }
+      } catch {
+        console.log("[authHeader] localStorage parse error, ignoring");
       }
-    } catch {
-      // ignore
     }
-  }
 
-  return token ? { Authorization: `Bearer ${token}` } : {};
+    if (token) {
+      console.log("[authHeader] Returning token");
+      return { Authorization: `Bearer ${token}` };
+    } else {
+      console.log("[authHeader] No token found, returning empty");
+      return {};
+    }
+  } catch (err) {
+    console.error("[authHeader] Error:", err);
+    return {};
+  }
 }
 
 // get the api content
@@ -28,23 +44,27 @@ export async function api<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  console.log(`[api] Getting auth header for ${path}...`);
   const auth = await authHeader();
+  console.log(`[api] Auth header retrieved for ${path}`);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...auth,
     ...((options.headers as Record<string, string>) || {}),
   };
-  
+
   // Add timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-  
+
   try {
-    const res = await fetch(`${BASE}${path}`, { 
-      ...options, 
+    console.log(`[api] Fetching ${path}...`);
+    const res = await fetch(`${BASE}${path}`, {
+      ...options,
       headers,
-      signal: controller.signal 
+      signal: controller.signal
     });
+    console.log(`[api] Response status for ${path}: ${res.status}`);
     const text = await res.text();
     let body: unknown = null;
     try {
@@ -59,8 +79,10 @@ export async function api<T = unknown>(
       const message =
         (body && typeof body === "object" && "error" in body && (body as { error?: string }).error) ||
         `Request failed (${res.status})`;
+      console.error(`[api] Error on ${path}:`, message);
       throw new Error(message as string);
     }
+    console.log(`[api] Successfully fetched ${path}`, body);
     return body as T;
   } finally {
     clearTimeout(timeoutId);
