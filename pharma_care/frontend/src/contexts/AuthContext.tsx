@@ -101,22 +101,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
     const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, newSession) => {
+      if (!mounted) return;
       setSession(newSession);
       if (newSession) {
         try {
           await loadPharmacy();
         } catch (err) {
-          console.error("[AuthContext] Failed to load pharmacy on auth change:", err);
+          if (mounted) {
+            console.error("[AuthContext] Failed to load pharmacy on auth change:", err);
+          }
         }
       } else {
-        setPharmacy(null);
+        if (mounted) {
+          setPharmacy(null);
+        }
       }
     });
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [loadPharmacy]);
+  }, [];
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -128,11 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         access_token: res.session.access_token,
         refresh_token: res.session.refresh_token,
       });
-      // Small delay to ensure session is persisted locally before fetching pharmacy data
-      await new Promise(resolve => setTimeout(resolve, 100));
-      await loadPharmacy();
+      // onAuthStateChange listener will fire and call loadPharmacy automatically
     },
-    [loadPharmacy]
+    []
   );
 
   const signup = useCallback(
@@ -145,11 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         access_token: res.session.access_token,
         refresh_token: res.session.refresh_token,
       });
-      // Small delay to ensure session is persisted locally before fetching pharmacy data
-      await new Promise(resolve => setTimeout(resolve, 100));
-      await loadPharmacy();
+      // onAuthStateChange listener will fire and call loadPharmacy automatically
     },
-    [loadPharmacy]
+    []
   );
 
   const logout = useCallback(async () => {

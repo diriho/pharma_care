@@ -2,6 +2,18 @@ import { supabase } from "../lib/supabase";
 
 const BASE = ((import.meta as any).env.VITE_API_BASE as string) || "/api";
 
+// Compute Supabase session storage key dynamically from configured URL
+function getSupabaseSessionKey(): string {
+  const url = (import.meta as any).env.VITE_SUPABASE_URL as string;
+  if (!url) return "sb-auth-token";
+
+  // Extract project ref from URL like "https://abcdef.supabase.co"
+  const match = url.match(/https:\/\/([a-z0-9]+)\.supabase\.co/);
+  const projectRef = match?.[1];
+
+  return projectRef ? `sb-${projectRef}-auth-token` : "sb-auth-token";
+}
+
 // get the athorization header with the current access token
 async function authHeader(): Promise<Record<string, string>> {
   console.log("[authHeader] Starting...");
@@ -15,7 +27,8 @@ async function authHeader(): Promise<Record<string, string>> {
     if (!token) {
       console.log("[authHeader] No token from getSession, checking localStorage...");
       try {
-        const sessionStr = localStorage.getItem("sb-kqzdqanvlsxlpakmuzpt-auth-token");
+        const sessionKey = getSupabaseSessionKey();
+        const sessionStr = localStorage.getItem(sessionKey);
         if (sessionStr) {
           const session = JSON.parse(sessionStr);
           token = session?.access_token;
