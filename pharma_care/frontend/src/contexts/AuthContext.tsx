@@ -71,8 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPharmacyError(null);
     try {
       const data = await api<{ user: User; pharmacy: Pharmacy | null }>("/auth/me");
+      // log check before setting
+      console.log("[AuthContext] loadPharmacy success");
       setPharmacy(data.pharmacy);
+
+      // error catch
     } catch (err) {
+      console.error("[AuthContext] loadPharmacy failed:", err);
       setPharmacy(null);
       setPharmacyError((err as Error).message);
     } finally {
@@ -82,14 +87,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+
+    async function initializeAuth() {
       try {
-        const { data } = await supabase.auth.getSession();
+        console.log("[AuthContext] Initial getSession start");
+
+        const { data, error } = await supabase.auth.getSession();
+
+        console.log("[AuthContext] Initial getSession complete");
+
+        if (error) {
+          console.error("[AuthContext] getSession error:", error);
+        }
+
         if (!mounted) return;
+
         setSession(data.session);
+
         if (data.session) {
           try {
+            console.log("[AuthContext] Initial loadPharmacy start");
             await loadPharmacy();
+            console.log("[AuthContext] Initial loadPharmacy complete");
           } catch (err) {
             console.error("[AuthContext] Failed to load pharmacy:", err);
           }
@@ -97,32 +116,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("[AuthContext] Session lookup failed:", err);
       } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, newSession) => {
-      if (!mounted) return;
-      setSession(newSession);
-      if (newSession) {
-        try {
-          await loadPharmacy();
-        } catch (err) {
-          if (mounted) {
-            console.error("[AuthContext] Failed to load pharmacy on auth change:", err);
-          }
-        }
-      } else {
         if (mounted) {
-          setPharmacy(null);
+          setLoading(false);
         }
+      }
+    }
+
+    initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!mounted) return;
+
+      console.log("[AuthContext] Auth state changed:", _event);
+
+      setSession(newSession);
+
+      if (newSession) {
+        setTimeout(() => {
+          loadPharmacy().catch((err) => {
+            console.error(
+              "[AuthContext] Failed to load pharmacy on auth change:",
+              err
+            );
+          });
+        }, 0);
+      } else {
+        setPharmacy(null);
       }
     });
+
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [loadPharmacy]);
 
   const login = useCallback(
     async (email: string, password: string) => {

@@ -65,6 +65,14 @@ export default function Analytics() {
     .slice(0, 8);
   const maxTop = Math.max(1, ...topEntries.map(([, v]) => v));
 
+  // print out the analytics data for debugging purposes
+  console.log("Analytics data:", data);
+  console.log("Medicines data:", meds);
+  console.log(currency, days, topEntries);
+  console.log(topEntries);
+  console.log(maxDay, maxTop);
+
+
   return (
     <div>
       <PageHeader
