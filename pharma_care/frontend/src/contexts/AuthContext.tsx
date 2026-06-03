@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (mounted) setLoading(false);
       }
     })();
+    
     const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, newSession) => {
       if (!mounted) return;
       setSession(newSession);
@@ -121,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [];
+  }, []);
 
   const login = useCallback(
     async (email: string, password: string) => {

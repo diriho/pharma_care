@@ -45,8 +45,9 @@ export default function Overview() {
   }
 
   useEffect(() => {
+    if (!pharmacy) return;
     load();
-  }, []);
+  }, [pharmacy]);
 
   const currency = pharmacy?.currency || "FBU";
 
