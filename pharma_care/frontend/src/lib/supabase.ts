@@ -8,4 +8,6 @@ console.log("Supabase Anon Key:", anonKey ? "****" : "MISSING"); // hide the act
 
 export const supabase = createClient(url, anonKey, {
   auth: { persistSession: true, autoRefreshToken: true },
+  
 });
+

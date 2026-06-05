@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -16,9 +16,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { api, apiDownload } from "../../api/client";
+import Search from "./Search";
 
 type Alert = { type: string; severity: string; message: string };
 
+// router descriptions
 const NAV = [
   { to: "/dashboard", label: "Tableau de Bord", icon: LayoutDashboard, end: true },
   { to: "/dashboard/pos", label: "Caisse (POS)", icon: ShoppingCart },
@@ -26,9 +28,11 @@ const NAV = [
   { to: "/dashboard/patients", label: "Patients & Clients", icon: Users },
   { to: "/dashboard/suppliers", label: "Fournisseurs", icon: Truck },
   { to: "/dashboard/analytics", label: "Analyses", icon: BarChart3 },
-  { to: "/dashboard/settings", label: "Configuration", icon: Settings },
+  { to: "/dashboard/settings", label: "Profile", icon: Settings },
 ];
 
+
+// main dashboard layout with sidebar and header
 export default function DashboardLayout() {
   const { pharmacy, logout, deleteAccount, user } = useAuth();
   const navigate = useNavigate();
@@ -54,11 +58,13 @@ export default function DashboardLayout() {
     };
   }, []);
 
+  // logout handling
   async function handleLogout() {
     await logout();
     navigate("/");
   }
 
+  // delete account handling
   async function handleDelete() {
     try {
       await deleteAccount();
@@ -68,6 +74,7 @@ export default function DashboardLayout() {
     }
   }
 
+  // data export handling
   async function handleExport() {
     try {
       await apiDownload(
@@ -79,11 +86,13 @@ export default function DashboardLayout() {
     }
   }
 
+  // DOM element to return
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       <aside className="hidden md:flex md:flex-col md:w-64 bg-slate-900 text-slate-300 shrink-0">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-800 bg-slate-950">
           <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center">
+
             <svg
               viewBox="0 0 24 24"
               className="h-5 w-5 text-white"
@@ -96,7 +105,9 @@ export default function DashboardLayout() {
             </svg>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white tracking-tight">Pharma Core</h1>
+            <Link to="/">
+              <h1 className="text-lg font-bold text-white tracking-tight">Pharma Core</h1>
+            </Link>
             <p className="text-xs text-emerald-400 font-medium">
               {pharmacy?.name || "Gestion Pharmacie"}
             </p>
@@ -153,9 +164,10 @@ export default function DashboardLayout() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-500">Connecté en tant que</p>
-            <p className="text-sm font-semibold text-slate-900">{user?.email}</p>
+          <div className="flex items-center gap-2">
+            {/* <p className="text-sm font-semibold text-slate-900">{user?.email}</p> */}
+            <Search />
+
           </div>
           <div className="relative">
             <button
