@@ -3,7 +3,6 @@
 ## Description
 **Pharma-Core** is a modern, cloud-based, multi-tenant pharmacy management platform designed specifically for officines in Burundi. It completely digitizes daily pharmacy operations—transforming everything from point-of-sale (POS) and inventory tracking to patient and supplier management into a single, seamless digital experience. By automating stock levels and surfacing intelligent alerts (like low stock or expiring medications), Pharma-Core empowers pharmacies to stop worrying about logistics and start focusing on delivering better patient care, all while guaranteeing complete data isolation and top-tier security.
 
-
 ## ✨ Key Features
 - Point of Sale (POS): Fast and comprehensive checkout experience integrated directly with live inventory.
 - Smart Inventory Management: Automated, live updates on stock when items are sold or received from restock orders.

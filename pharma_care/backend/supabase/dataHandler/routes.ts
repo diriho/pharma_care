@@ -62,6 +62,7 @@ function makeResource(table: string): Router {
   return sub;
 }
 
+// create backend routes to access my tables
 router.use("/medicines", makeResource("medicines"));
 router.use("/suppliers", makeResource("suppliers"));
 router.use("/patients", makeResource("patients"));
@@ -101,6 +102,7 @@ interface SaleItem {
   unit_price?: number;
 }
 
+// Checkout route to create a sale and decrement stock
 router.post("/sales/checkout", async (req: Request, res: Response) => {
   const userId = (req as AuthedRequest).user.id;
   const { items, patient_id, total, payment_method, notes } = req.body || {};
@@ -200,6 +202,7 @@ interface Sale {
   items?: SaleItem[];
 }
 
+// Notifications route to fetch low stock and expiry alerts
 router.get("/notifications", async (req: Request, res: Response) => {
   try {
     const userId = (req as AuthedRequest).user.id;
@@ -262,6 +265,7 @@ router.get("/notifications", async (req: Request, res: Response) => {
   }
 });
 
+// Analytics route to fetch counts, inventory value, revenue, and sales trends
 router.get("/analytics", async (req: Request, res: Response) => {
   try {
     const userId = (req as AuthedRequest).user.id;

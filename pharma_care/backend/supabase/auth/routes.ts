@@ -46,6 +46,7 @@ function validatePharmacy(payload: PharmacyPayload): string | null {
   return null;
 }
 
+// Signup route to create a new user and pharmacy settings
 router.post("/signup", async (req: Request, res: Response) => {
   const { email, password, pharmacy } = req.body || {};
   if (!email || !password) {
@@ -100,6 +101,8 @@ router.post("/signup", async (req: Request, res: Response) => {
   return res.json({ session: signIn.session, user: signIn.user });
 });
 
+// if the user is already logged in, return their session and user info
+
 router.post("/login", async (req: Request, res: Response) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
@@ -110,6 +113,7 @@ router.post("/login", async (req: Request, res: Response) => {
   return res.json({ session: data.session, user: data.user });
 });
 
+// Logout route to sign out the user 
 router.post("/logout", requireAuth, async (req: Request, res: Response) => {
   const token = (req as AuthedRequest).accessToken;
   await admin.auth.admin.signOut(token).catch(() => {});
@@ -129,6 +133,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
   return res.json({ user: (req as AuthedRequest).user, pharmacy: data || null });
 });
 
+// route to delete the user account and all associated data
 router.delete("/account", requireAuth, async (req: Request, res: Response) => {
   const userId = (req as AuthedRequest).user.id;
   const tables = [
@@ -140,6 +145,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
     "notifications",
     "pharmacy_settings",
   ];
+  // iterate over the tables and delete all rows where user_id matches
   for (const t of tables) {
     await admin.from(t).delete().eq("user_id", userId);
   }
@@ -148,4 +154,5 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
   return res.json({ ok: true });
 });
 
+// export at the router with all the routes api endpoints
 export default router;

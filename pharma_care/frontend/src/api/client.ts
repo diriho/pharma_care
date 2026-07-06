@@ -1,11 +1,12 @@
 import { supabase } from "../lib/supabase";
 
-
-const BASE = ((import.meta as any).env.VITE_API_BASE as string) || "/api";
+const { env } = import.meta;
+// base api path
+const BASE = env.VITE_API_BASE || "/api";
 
 // Compute Supabase session storage key dynamically from configured URL
 function getSupabaseSessionKey(): string {
-  const url = (import.meta as any).env.VITE_SUPABASE_URL as string;
+  const url = env.VITE_SUPABASE_URL as string;
   if (!url) return "sb-auth-token"
 
   // Extract project ref from URL like "https://abcdef.supabase.co" and validate that it matches expected schema
