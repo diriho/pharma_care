@@ -1,12 +1,11 @@
 import { supabase } from "../lib/supabase";
 
-const { env } = import.meta;
 // base api path
-const BASE = env.VITE_API_BASE || "/api";
+const BASE = import.meta.env.VITE_API_BASE || "/api";
 
 // Compute Supabase session storage key dynamically from configured URL
 function getSupabaseSessionKey(): string {
-  const url = env.VITE_SUPABASE_URL as string;
+  const url = import.meta.env.VITE_SUPABASE_URL;
   if (!url) return "sb-auth-token"
 
   // Extract project ref from URL like "https://abcdef.supabase.co" and validate that it matches expected schema
@@ -109,7 +108,7 @@ export async function api<T = unknown>(
   }
 }
 
-// downlaod that datafile from the api
+// Download that datafile from the api
 export async function apiDownload(path: string, filename: string): Promise<void> {
   const headers = await authHeader();
   const res = await fetch(`${BASE}${path}`, { headers });

@@ -13,50 +13,66 @@ function makeResource(table: string): Router {
   const sub = Router();
 
   sub.get("/", async (req: Request, res: Response) => {
-    const userId = (req as AuthedRequest).user.id;
-    const { data, error } = await admin
-      .from(table)
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
+    try {
+      const userId = (req as AuthedRequest).user.id;
+      const { data, error } = await admin
+        .from(table)
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) return res.status(500).json({ error: error.message });
+      res.json(data);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+    }
   });
 
   sub.post("/", async (req: Request, res: Response) => {
-    const userId = (req as AuthedRequest).user.id;
-    const payload: Record<string, unknown> = { ...req.body, user_id: userId };
-    delete payload.id;
-    const { data, error } = await admin.from(table).insert(payload).select().single();
-    if (error) return res.status(400).json({ error: error.message });
-    res.status(201).json(data);
+    try {
+      const userId = (req as AuthedRequest).user.id;
+      const payload: Record<string, unknown> = { ...req.body, user_id: userId };
+      delete payload.id;
+      const { data, error } = await admin.from(table).insert(payload).select().single();
+      if (error) return res.status(400).json({ error: error.message });
+      res.status(201).json(data);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+    }
   });
 
   sub.put("/:id", async (req: Request, res: Response) => {
-    const userId = (req as AuthedRequest).user.id;
-    const payload: Record<string, unknown> = { ...req.body };
-    delete payload.user_id;
-    delete payload.id;
-    const { data, error } = await admin
-      .from(table)
-      .update(payload)
-      .eq("id", req.params.id)
-      .eq("user_id", userId)
-      .select()
-      .single();
-    if (error) return res.status(400).json({ error: error.message });
-    res.json(data);
+    try {
+      const userId = (req as AuthedRequest).user.id;
+      const payload: Record<string, unknown> = { ...req.body };
+      delete payload.user_id;
+      delete payload.id;
+      const { data, error } = await admin
+        .from(table)
+        .update(payload)
+        .eq("id", req.params.id)
+        .eq("user_id", userId)
+        .select()
+        .single();
+      if (error) return res.status(400).json({ error: error.message });
+      res.json(data);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+    }
   });
 
   sub.delete("/:id", async (req: Request, res: Response) => {
-    const userId = (req as AuthedRequest).user.id;
-    const { error } = await admin
-      .from(table)
-      .delete()
-      .eq("id", req.params.id)
-      .eq("user_id", userId);
-    if (error) return res.status(400).json({ error: error.message });
-    res.json({ ok: true });
+    try {
+      const userId = (req as AuthedRequest).user.id;
+      const { error } = await admin
+        .from(table)
+        .delete()
+        .eq("id", req.params.id)
+        .eq("user_id", userId);
+      if (error) return res.status(400).json({ error: error.message });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+    }
   });
 
   return sub;
@@ -70,29 +86,33 @@ router.use("/sales", makeResource("sales"));
 router.use("/restock-orders", makeResource("restock_orders"));
 
 router.put("/settings", async (req: Request, res: Response) => {
-  const userId = (req as AuthedRequest).user.id;
-  const allowed: (keyof typeof req.body)[] = [
-    "name",
-    "address",
-    "commune",
-    "province",
-    "phone",
-    "currency",
-    "nif",
-    "rc",
-    "expiry_alert_months",
-    "low_stock_alert_level",
-  ];
-  const payload: Record<string, unknown> = {};
-  for (const k of allowed) if (k in req.body) payload[k as string] = req.body[k];
-  const { data, error } = await admin
-    .from("pharmacy_settings")
-    .update(payload)
-    .eq("user_id", userId)
-    .select()
-    .single();
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const allowed: (keyof typeof req.body)[] = [
+      "name",
+      "address",
+      "commune",
+      "province",
+      "phone",
+      "currency",
+      "nif",
+      "rc",
+      "expiry_alert_months",
+      "low_stock_alert_level",
+    ];
+    const payload: Record<string, unknown> = {};
+    for (const k of allowed) if (k in req.body) payload[k as string] = req.body[k];
+    const { data, error } = await admin
+      .from("pharmacy_settings")
+      .update(payload)
+      .eq("user_id", userId)
+      .select()
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
 });
 
 interface SaleItem {
@@ -104,50 +124,54 @@ interface SaleItem {
 
 // Checkout route to create a sale and decrement stock
 router.post("/sales/checkout", async (req: Request, res: Response) => {
-  const userId = (req as AuthedRequest).user.id;
-  const { items, patient_id, total, payment_method, notes } = req.body || {};
-  if (!Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: "Aucun article dans la vente" });
-  }
-  for (const it of items as SaleItem[]) {
-    if (!it.medicine_id || !it.quantity) {
-      return res.status(400).json({ error: "Article invalide" });
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const { items, patient_id, total, payment_method, notes } = req.body || {};
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Aucun article dans la vente" });
     }
-    const { data: med, error: medErr } = await admin
-      .from("medicines")
-      .select("id,stock,name")
-      .eq("id", it.medicine_id)
-      .eq("user_id", userId)
+    for (const it of items as SaleItem[]) {
+      if (!it.medicine_id || !it.quantity) {
+        return res.status(400).json({ error: "Article invalide" });
+      }
+      const { data: med, error: medErr } = await admin
+        .from("medicines")
+        .select("id,stock,name")
+        .eq("id", it.medicine_id)
+        .eq("user_id", userId)
+        .single();
+      if (medErr || !med) {
+        return res.status(400).json({ error: `Médicament introuvable: ${it.medicine_id}` });
+      }
+      if (med.stock < it.quantity) {
+        return res.status(400).json({ error: `Stock insuffisant pour ${med.name}` });
+      }
+    }
+    const { data: sale, error: saleErr } = await admin
+      .from("sales")
+      .insert({
+        user_id: userId,
+        patient_id: patient_id || null,
+        items,
+        total,
+        payment_method: payment_method || "cash",
+        notes: notes || null,
+      })
+      .select()
       .single();
-    if (medErr || !med) {
-      return res.status(400).json({ error: `Médicament introuvable: ${it.medicine_id}` });
-    }
-    if (med.stock < it.quantity) {
-      return res.status(400).json({ error: `Stock insuffisant pour ${med.name}` });
-    }
-  }
-  const { data: sale, error: saleErr } = await admin
-    .from("sales")
-    .insert({
-      user_id: userId,
-      patient_id: patient_id || null,
-      items,
-      total,
-      payment_method: payment_method || "cash",
-      notes: notes || null,
-    })
-    .select()
-    .single();
-  if (saleErr) return res.status(400).json({ error: saleErr.message });
+    if (saleErr) return res.status(400).json({ error: saleErr.message });
 
-  for (const it of items as SaleItem[]) {
-    await admin.rpc("decrement_medicine_stock", {
-      p_medicine_id: it.medicine_id,
-      p_quantity: it.quantity,
-      p_user: userId,
-    });
+    for (const it of items as SaleItem[]) {
+      await admin.rpc("decrement_medicine_stock", {
+        p_medicine_id: it.medicine_id,
+        p_quantity: it.quantity,
+        p_user: userId,
+      });
+    }
+    res.status(201).json(sale);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
   }
-  res.status(201).json(sale);
 });
 
 interface OrderLine {
@@ -157,33 +181,37 @@ interface OrderLine {
 }
 
 router.post("/restock-orders/:id/receive", async (req: Request, res: Response) => {
-  const userId = (req as AuthedRequest).user.id;
-  const { data: order, error: oErr } = await admin
-    .from("restock_orders")
-    .select("*")
-    .eq("id", req.params.id)
-    .eq("user_id", userId)
-    .single();
-  if (oErr || !order) return res.status(404).json({ error: "Commande introuvable" });
-  if (order.status === "received") {
-    return res.status(400).json({ error: "Commande déjà réceptionnée" });
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const { data: order, error: oErr } = await admin
+      .from("restock_orders")
+      .select("*")
+      .eq("id", req.params.id)
+      .eq("user_id", userId)
+      .single();
+    if (oErr || !order) return res.status(404).json({ error: "Commande introuvable" });
+    if (order.status === "received") {
+      return res.status(400).json({ error: "Commande déjà réceptionnée" });
+    }
+    for (const line of (order.items || []) as OrderLine[]) {
+      await admin.rpc("increment_medicine_stock", {
+        p_medicine_id: line.medicine_id,
+        p_quantity: line.quantity,
+        p_user: userId,
+      });
+    }
+    const { data, error } = await admin
+      .from("restock_orders")
+      .update({ status: "received", received_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .eq("user_id", userId)
+      .select()
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
   }
-  for (const line of (order.items || []) as OrderLine[]) {
-    await admin.rpc("increment_medicine_stock", {
-      p_medicine_id: line.medicine_id,
-      p_quantity: line.quantity,
-      p_user: userId,
-    });
-  }
-  const { data, error } = await admin
-    .from("restock_orders")
-    .update({ status: "received", received_at: new Date().toISOString() })
-    .eq("id", req.params.id)
-    .eq("user_id", userId)
-    .select()
-    .single();
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
 });
 
 interface Medicine {
