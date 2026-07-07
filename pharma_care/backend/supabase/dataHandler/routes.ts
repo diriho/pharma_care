@@ -40,6 +40,7 @@ function makeResource(table: string): Router {
     }
   });
 
+
   sub.put("/:id", async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthedRequest).user.id;
@@ -174,6 +175,7 @@ router.post("/sales/checkout", async (req: Request, res: Response) => {
   }
 });
 
+// order line interface type definition
 interface OrderLine {
   medicine_id: string;
   quantity: number;
@@ -214,6 +216,7 @@ router.post("/restock-orders/:id/receive", async (req: Request, res: Response) =
   }
 });
 
+// Medicine interface type definition
 interface Medicine {
   id: string;
   name: string;
@@ -224,6 +227,7 @@ interface Medicine {
   selling_price?: number;
 }
 
+// Sale interface type definition
 interface Sale {
   total?: number;
   created_at?: string;
