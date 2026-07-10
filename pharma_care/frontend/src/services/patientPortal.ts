@@ -120,6 +120,12 @@ export function sendMessage(conversationId: string, body: string) {
   });
 }
 
+export function deleteMessage(conversationId: string, messageId: string) {
+  return api(`/patient/conversations/${conversationId}/messages/${messageId}`, {
+    method: "DELETE",
+  });
+}
+
 // ============== Notifications ==============
 
 export function getNotifications() {
@@ -134,4 +140,8 @@ export function markNotificationRead(id: string) {
 
 export function markAllNotificationsRead() {
   return api("/patient/notifications/read-all", { method: "POST" });
+}
+
+export function deleteNotification(id: string) {
+  return api(`/patient/notifications/${id}`, { method: "DELETE" });
 }

@@ -3,11 +3,13 @@ import { admin } from "../client";
 import { requireAuth, requireRole, type AuthedRequest } from "../../middleware/auth";
 import {
   createNotification,
+  deleteNotification,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "../services/notifications";
 import {
+  deleteMessage,
   getConversationForUser,
   getMessages,
   listConversations,
@@ -458,6 +460,30 @@ router.post("/conversations/:id/messages", async (req: Request, res: Response) =
   }
 });
 
+// Delete (soft) one of the caller's own messages
+router.delete(
+  "/conversations/:id/messages/:messageId",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as AuthedRequest).user.id;
+      const conversation = await getConversationForUser(req.params.id, userId);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation introuvable" });
+      }
+      await deleteMessage(conversation, userId, req.params.messageId);
+      res.json({ ok: true });
+    } catch (err) {
+      const message = (err as Error).message || "Erreur serveur";
+      const status = message.includes("introuvable")
+        ? 404
+        : message.includes("propres messages")
+          ? 403
+          : 500;
+      res.status(status).json({ error: message });
+    }
+  }
+);
+
 // ============== Notifications ==============
 
 router.get("/notifications", async (req: Request, res: Response) => {
@@ -481,6 +507,16 @@ router.post("/notifications/:id/read", async (req: Request, res: Response) => {
 router.post("/notifications/read-all", async (req: Request, res: Response) => {
   try {
     await markAllNotificationsRead((req as AuthedRequest).user.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+// Delete (soft) one of the caller's own notifications — read or unread
+router.delete("/notifications/:id", async (req: Request, res: Response) => {
+  try {
+    await deleteNotification((req as AuthedRequest).user.id, req.params.id);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message || "Erreur serveur" });

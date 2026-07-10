@@ -110,6 +110,7 @@ export type Message = {
   sender_user_id: string;
   body: string;
   read_at: string | null;
+  deleted_at?: string | null;
   created_at: string;
 };
 
@@ -131,6 +132,7 @@ export type PatientNotification = {
   message: string;
   meta: Record<string, unknown>;
   read_at: string | null;
+  deleted_at?: string | null;
   created_at: string;
 };
 

@@ -1,12 +1,27 @@
 import { useEffect, useState } from "react";
-import { Pill, Users, Truck, Receipt, AlertTriangle, CalendarClock } from "lucide-react";
+import {
+  Pill,
+  Users,
+  Truck,
+  Receipt,
+  AlertTriangle,
+  CalendarClock,
+  MessageSquare,
+  ShoppingBag,
+  Star,
+  ClipboardCheck,
+} from "lucide-react";
 import { api } from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
-import { formatCurrency } from "../../lib/format";
+import { formatCurrency, formatDate } from "../../lib/format";
 import PageHeader from "../../components/PageHeader";
 import WeeklyPatientVolume from "../../components/dashboard/WeeklyPatientVolume";
+import StarRating from "../../components/ui/StarRating";
+import EmptyState from "../../components/ui/EmptyState";
 import { getWeeklyPatientVolume } from "../../services/patientAnalytics";
+import { getPortalStats, type PortalStats } from "../../services/pharmacyAdmin";
 import type { WeeklyPatientData } from "../../types/analytics";
+import RatingTrendChart from "../../components/dashboard/RatingTrendChart";
 
 type Analytics = {
   counts: { medicines: number; patients: number; suppliers: number; sales: number };
@@ -20,6 +35,7 @@ type Alerts = { alerts: { severity: string; message: string; type: string }[] };
 export default function Overview() {
   const { pharmacy } = useAuth();
   const [a, setA] = useState<Analytics | null>(null);
+  const [stats, setStats] = useState<PortalStats | null>(null);
   const [n, setN] = useState<Alerts["alerts"]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,12 +59,14 @@ export default function Overview() {
     setLoading(true);
     setError(null);
     try {
-      const [analytics, notif] = await Promise.all([
+      const [analytics, notif, portalStats] = await Promise.all([
         api<Analytics>("/data/analytics"),
         api<Alerts>("/data/notifications"),
+        getPortalStats(),
       ]);
       setA(analytics);
       setN(notif.alerts);
+      setStats(portalStats);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -107,6 +125,31 @@ export default function Overview() {
             />
           </div>
 
+          {stats && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <StatCard
+                label="Commandes totales"
+                value={stats.orders.total}
+                icon={<ShoppingBag className="h-5 w-5" />}
+              />
+              <StatCard
+                label="Commandes en attente"
+                value={stats.orders.pending}
+                icon={<ClipboardCheck className="h-5 w-5" />}
+              />
+              <StatCard
+                label="Commandes terminées"
+                value={stats.orders.completed}
+                icon={<Receipt className="h-5 w-5" />}
+              />
+              <StatCard
+                label="Conversations actives (30 j)"
+                value={stats.conversations.active}
+                icon={<MessageSquare className="h-5 w-5" />}
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             <ValueCard
               label="Chiffre d'affaires"
@@ -131,6 +174,8 @@ export default function Overview() {
               onRetry={loadWeekly}
             />
           </div>
+
+          {stats && <RatingsSection ratings={stats.ratings} />}
 
           <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <h3 className="text-lg font-bold text-slate-900 mb-3">
@@ -164,6 +209,100 @@ export default function Overview() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Ratings analytics: average, distribution bars, monthly trend, recent reviews
+function RatingsSection({ ratings }: { ratings: PortalStats["ratings"] }) {
+  const maxBucket = Math.max(1, ...Object.values(ratings.distribution));
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <section className="bg-white rounded-2xl border border-slate-200 p-5">
+        <h3 className="text-lg font-bold text-slate-900 mb-3">
+          Évaluations de la pharmacie
+        </h3>
+        {ratings.count === 0 ? (
+          <EmptyState
+            icon={<Star className="h-6 w-6" />}
+            title="Aucune évaluation reçue"
+            hint="Les notes laissées par vos patients apparaîtront ici."
+          />
+        ) : (
+          <>
+            <div className="flex items-center gap-4 mb-5">
+              <p className="text-4xl font-bold text-slate-900">
+                {ratings.average.toFixed(1)}
+                <span className="text-lg font-semibold text-slate-400"> / 5</span>
+              </p>
+              <div>
+                <StarRating value={ratings.average} />
+                <p className="text-xs text-slate-500 mt-1">
+                  {ratings.count} avis au total
+                </p>
+              </div>
+            </div>
+
+            <ul className="space-y-2 mb-2">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = ratings.distribution[star] || 0;
+                return (
+                  <li key={star} className="flex items-center gap-3 text-sm">
+                    <span className="w-8 shrink-0 text-slate-600 font-semibold">
+                      {star} ★
+                    </span>
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-2 bg-emerald-500 rounded-full"
+                        style={{ width: `${(count / maxBucket) * 100}%` }}
+                      />
+                    </div>
+                    <span className="w-8 shrink-0 text-right text-slate-500">
+                      {count}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {ratings.byMonth.length >= 2 && (
+              <div className="mt-5 pt-4 border-t border-slate-100">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                  Note moyenne par mois
+                </p>
+                <RatingTrendChart data={ratings.byMonth} />
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      <section className="bg-white rounded-2xl border border-slate-200 p-5">
+        <h3 className="text-lg font-bold text-slate-900 mb-3">Avis récents</h3>
+        {ratings.recent.length === 0 ? (
+          <EmptyState
+            icon={<Star className="h-6 w-6" />}
+            title="Pas encore d'avis"
+            hint="Les commentaires de vos patients apparaîtront ici."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {ratings.recent.map((r) => (
+              <li key={r.id} className="border border-slate-100 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {r.patient_name}
+                  </span>
+                  <StarRating value={r.rating} />
+                </div>
+                {r.review && <p className="text-sm text-slate-600">{r.review}</p>}
+                <p className="text-xs text-slate-400 mt-1">{formatDate(r.updated_at)}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

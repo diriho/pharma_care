@@ -2,6 +2,7 @@ import NotificationCenter, {
   type NotificationsAdapter,
 } from "../../components/notifications/NotificationCenter";
 import {
+  deleteNotification,
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -11,6 +12,7 @@ const adapter: NotificationsAdapter = {
   list: getNotifications,
   markRead: markNotificationRead,
   markAllRead: markAllNotificationsRead,
+  remove: deleteNotification,
 };
 
 export default function Notifications() {

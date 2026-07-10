@@ -6,6 +6,7 @@ import MessagingPanel, {
 } from "../../components/messaging/MessagingPanel";
 import { useAuth } from "../../contexts/AuthContext";
 import {
+  deleteMessage,
   getConversations,
   getMessages,
   getPharmacies,
@@ -18,6 +19,7 @@ const adapter: MessagingAdapter = {
   listConversations: getConversations,
   getMessages,
   sendMessage,
+  deleteMessage,
 };
 
 export default function Messages() {

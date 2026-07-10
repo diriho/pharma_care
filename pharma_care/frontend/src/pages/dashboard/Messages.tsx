@@ -4,6 +4,7 @@ import MessagingPanel, {
 } from "../../components/messaging/MessagingPanel";
 import { useAuth } from "../../contexts/AuthContext";
 import {
+  deleteMessage,
   getConversations,
   getMessages,
   sendMessage,
@@ -13,6 +14,7 @@ const adapter: MessagingAdapter = {
   listConversations: getConversations,
   getMessages,
   sendMessage,
+  deleteMessage,
 };
 
 // Pharmacy-side secure messaging: patients initiate the conversations,

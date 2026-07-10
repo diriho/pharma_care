@@ -16,6 +16,7 @@ export type MessageRow = {
   sender_user_id: string;
   body: string;
   read_at: string | null;
+  deleted_at: string | null;
   created_at: string;
 };
 
@@ -56,6 +57,7 @@ export async function listConversations(userId: string, party: Party) {
     .from("messages")
     .select("*")
     .in("conversation_id", list.map((c) => c.id))
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   return list.map((c) => {
@@ -95,6 +97,7 @@ export async function getMessages(conversationId: string, userId: string) {
     .from("messages")
     .select("*")
     .eq("conversation_id", conversationId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
 
@@ -103,9 +106,39 @@ export async function getMessages(conversationId: string, userId: string) {
     .update({ read_at: new Date().toISOString() })
     .eq("conversation_id", conversationId)
     .neq("sender_user_id", userId)
-    .is("read_at", null);
+    .is("read_at", null)
+    .is("deleted_at", null);
 
   return (data || []) as MessageRow[];
+}
+
+// Soft-delete a message the caller sent. The resulting UPDATE event propagates
+// through Realtime (RLS-checked) so every participant's UI drops the message.
+export async function deleteMessage(
+  conversation: ConversationRow,
+  userId: string,
+  messageId: string
+): Promise<void> {
+  const { data: message } = await admin
+    .from("messages")
+    .select("id,sender_user_id,conversation_id,deleted_at")
+    .eq("id", messageId)
+    .single();
+  if (
+    !message ||
+    message.conversation_id !== conversation.id ||
+    message.deleted_at
+  ) {
+    throw new Error("Message introuvable");
+  }
+  if (message.sender_user_id !== userId) {
+    throw new Error("Vous ne pouvez supprimer que vos propres messages");
+  }
+  const { error } = await admin
+    .from("messages")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", messageId);
+  if (error) throw new Error(error.message);
 }
 
 export async function sendMessage(

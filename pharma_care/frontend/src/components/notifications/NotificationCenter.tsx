@@ -6,10 +6,12 @@ import {
   MessageSquare,
   Package,
   Star,
+  Trash2,
 } from "lucide-react";
 import PageHeader from "../PageHeader";
 import ErrorBanner from "../ui/ErrorBanner";
 import EmptyState from "../ui/EmptyState";
+import ConfirmDialog from "../ui/ConfirmDialog";
 import { SkeletonLines } from "../ui/Skeleton";
 import { useRealtimeTable } from "../../hooks/useRealtimeTable";
 import type { PatientNotification } from "../../types/patient";
@@ -17,10 +19,12 @@ import { formatDate } from "../../lib/format";
 
 // Backend adapter so the same center serves the patient portal (/patient/…)
 // and the pharmacy dashboard (/data/…).
+// remove is optional: the delete affordance only renders when provided.
 export type NotificationsAdapter = {
   list: () => Promise<{ items: PatientNotification[]; unread: number }>;
   markRead: (id: string) => Promise<unknown>;
   markAllRead: () => Promise<unknown>;
+  remove?: (id: string) => Promise<unknown>;
 };
 
 function kindIcon(kind: string) {
@@ -54,6 +58,8 @@ export default function NotificationCenter({
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<PatientNotification | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -107,6 +113,22 @@ export default function NotificationCenter({
     }
   }
 
+  async function handleDelete(n: PatientNotification) {
+    if (!adapter.remove) return;
+    setDeleting(true);
+    try {
+      await adapter.remove(n.id);
+      setItems((list) => list.filter((it) => it.id !== n.id));
+      if (!n.read_at) setUnread((u) => Math.max(0, u - 1));
+      setConfirmTarget(null);
+    } catch (err) {
+      setConfirmTarget(null);
+      alert((err as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -142,12 +164,15 @@ export default function NotificationCenter({
         ) : (
           <ul className="divide-y divide-slate-100">
             {items.map((n) => (
-              <li key={n.id}>
+              <li
+                key={n.id}
+                className={`group flex items-start gap-1 pr-3 transition-colors ${
+                  n.read_at ? "bg-white" : "bg-emerald-50/40 hover:bg-emerald-50/70"
+                }`}
+              >
                 <button
                   onClick={() => handleRead(n)}
-                  className={`w-full text-left px-4 sm:px-5 py-4 flex items-start gap-3 transition-colors ${
-                    n.read_at ? "bg-white" : "bg-emerald-50/40 hover:bg-emerald-50/70"
-                  }`}
+                  className="flex-1 min-w-0 text-left px-4 sm:px-5 py-4 flex items-start gap-3"
                 >
                   <span
                     className={`mt-0.5 h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
@@ -174,11 +199,29 @@ export default function NotificationCenter({
                     <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                   )}
                 </button>
+                {adapter.remove && (
+                  <button
+                    onClick={() => setConfirmTarget(n)}
+                    className="mt-4 p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shrink-0"
+                    aria-label="Supprimer cette notification"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmTarget)}
+        title="Supprimer cette notification ?"
+        message="La notification sera définitivement retirée de votre liste."
+        busy={deleting}
+        onConfirm={() => confirmTarget && handleDelete(confirmTarget)}
+        onCancel={() => setConfirmTarget(null)}
+      />
     </div>
   );
 }

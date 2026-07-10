@@ -3,17 +3,20 @@ import { admin } from "../client";
 import { requireAuth, requireRole, type AuthedRequest } from "../../middleware/auth";
 import {
   createNotification,
+  deleteNotification,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "../services/notifications";
 import {
+  deleteMessage,
   getConversationForUser,
   getMessages,
   listConversations,
   sendMessage,
 } from "../services/messaging";
 import { getPrescriptionSignedUrl } from "../services/prescriptions";
+import { listPharmacyRatings } from "../services/ratings";
 
 const router = Router();
 router.use(requireAuth);
@@ -341,6 +344,95 @@ router.post("/notifications/:id/read", async (req: Request, res: Response) => {
   }
 });
 
+// Delete (soft) one of the pharmacy's own notifications
+router.delete("/notifications/:id", async (req: Request, res: Response) => {
+  try {
+    await deleteNotification((req as AuthedRequest).user.id, req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+// Patient-portal activity stats for the pharmacy dashboard: orders, active
+// conversations, and rating analytics (distribution, recent reviews, trend).
+router.get("/portal-stats", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const [ordersRes, convosRes, ratingsRes, recentRatings] = await Promise.all([
+      admin
+        .from("medication_orders")
+        .select("status")
+        .eq("pharmacy_user_id", userId),
+      admin
+        .from("conversations")
+        .select("id,updated_at")
+        .eq("pharmacy_user_id", userId),
+      admin
+        .from("pharmacy_ratings")
+        .select("rating,updated_at")
+        .eq("pharmacy_user_id", userId),
+      listPharmacyRatings(userId, 5),
+    ]);
+
+    const orders = (ordersRes.data || []) as { status: string }[];
+    const byStatus: Record<string, number> = {};
+    for (const o of orders) byStatus[o.status] = (byStatus[o.status] || 0) + 1;
+
+    const activeCutoff = new Date();
+    activeCutoff.setDate(activeCutoff.getDate() - 30);
+    const conversations = (convosRes.data || []) as { updated_at: string }[];
+
+    const ratings = (ratingsRes.data || []) as { rating: number; updated_at: string }[];
+    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const monthly = new Map<string, { sum: number; count: number }>();
+    for (const r of ratings) {
+      distribution[r.rating] = (distribution[r.rating] || 0) + 1;
+      const month = (r.updated_at || "").slice(0, 7);
+      if (!month) continue;
+      const bucket = monthly.get(month) || { sum: 0, count: 0 };
+      bucket.sum += r.rating;
+      bucket.count += 1;
+      monthly.set(month, bucket);
+    }
+    const count = ratings.length;
+    const average =
+      count === 0
+        ? 0
+        : Math.round((ratings.reduce((s, r) => s + r.rating, 0) / count) * 100) / 100;
+
+    res.json({
+      orders: {
+        total: orders.length,
+        pending: byStatus.pending || 0,
+        completed: byStatus.completed || 0,
+        byStatus,
+      },
+      conversations: {
+        total: conversations.length,
+        active: conversations.filter(
+          (c) => new Date(c.updated_at) >= activeCutoff
+        ).length,
+      },
+      ratings: {
+        average,
+        count,
+        distribution,
+        recent: recentRatings,
+        byMonth: Array.from(monthly.entries())
+          .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+          .map(([month, { sum, count: n }]) => ({
+            month,
+            average: Math.round((sum / n) * 100) / 100,
+            count: n,
+          })),
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
 // Analytics route to fetch counts, inventory value, revenue, and sales trends
 router.get("/analytics", async (req: Request, res: Response) => {
   try {
@@ -538,6 +630,30 @@ router.post("/conversations/:id/messages", async (req: Request, res: Response) =
     res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
   }
 });
+
+// Delete (soft) one of the pharmacy's own messages
+router.delete(
+  "/conversations/:id/messages/:messageId",
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as AuthedRequest).user.id;
+      const conversation = await getConversationForUser(req.params.id, userId);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation introuvable" });
+      }
+      await deleteMessage(conversation, userId, req.params.messageId);
+      res.json({ ok: true });
+    } catch (err) {
+      const message = (err as Error).message || "Erreur serveur";
+      const status = message.includes("introuvable")
+        ? 404
+        : message.includes("propres messages")
+          ? 403
+          : 500;
+      res.status(status).json({ error: message });
+    }
+  }
+);
 
 const WEEKDAYS_FR = [
   "Dimanche",

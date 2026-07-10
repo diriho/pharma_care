@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, Trash2 } from "lucide-react";
 import ErrorBanner from "../ui/ErrorBanner";
 import EmptyState from "../ui/EmptyState";
+import ConfirmDialog from "../ui/ConfirmDialog";
 import { SkeletonLines } from "../ui/Skeleton";
 import { useRealtimeTable } from "../../hooks/useRealtimeTable";
 import type { Conversation, Message } from "../../types/patient";
@@ -9,10 +10,12 @@ import { formatDate } from "../../lib/format";
 
 // Backend adapter so the same panel serves the patient portal (/patient/…)
 // and the pharmacy dashboard (/data/…) without duplicating UI or state logic.
+// deleteMessage is optional: the delete affordance only renders when provided.
 export type MessagingAdapter = {
   listConversations: () => Promise<Conversation[]>;
   getMessages: (conversationId: string) => Promise<Message[]>;
   sendMessage: (conversationId: string, body: string) => Promise<Message>;
+  deleteMessage?: (conversationId: string, messageId: string) => Promise<unknown>;
 };
 
 export default function MessagingPanel({
@@ -36,6 +39,8 @@ export default function MessagingPanel({
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<Message | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<Conversation | null>(null);
   selectedRef.current = selected;
@@ -82,12 +87,22 @@ export default function MessagingPanel({
     });
   }, [loadConversations, openConversation, initialConversationId]);
 
-  // Realtime: new messages appear instantly; RLS only delivers rows from
-  // conversations this user participates in.
+  // Realtime: new messages appear instantly and deletions vanish everywhere;
+  // RLS only delivers rows from conversations this user participates in.
+  // Deletions are soft (deleted_at) and therefore arrive as UPDATE events.
   useRealtimeTable<Message>({
     table: "messages",
-    onChange: (row) => {
+    events: ["INSERT", "UPDATE"],
+    onChange: (row, event) => {
       const open = selectedRef.current;
+      if (event === "UPDATE") {
+        if (!row.deleted_at) return; // read receipts — nothing to redraw
+        if (open && row.conversation_id === open.id) {
+          setMessages((list) => list.filter((m) => m.id !== row.id));
+        }
+        loadConversations(); // preview/unread may reference the deleted message
+        return;
+      }
       if (open && row.conversation_id === open.id) {
         if (row.sender_user_id === currentUserId) return; // already appended on send
         // refetch instead of appending: dedupes and marks the message read
@@ -119,6 +134,22 @@ export default function MessagingPanel({
       alert((err as Error).message);
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleDelete(message: Message) {
+    if (!adapter.deleteMessage || !selected) return;
+    setDeletingId(message.id);
+    try {
+      await adapter.deleteMessage(selected.id, message.id);
+      setMessages((list) => list.filter((m) => m.id !== message.id));
+      setConfirmTarget(null);
+      loadConversations(); // the list preview may have shown this message
+    } catch (err) {
+      setConfirmTarget(null);
+      alert((err as Error).message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -192,17 +223,30 @@ export default function MessagingPanel({
                 ) : (
                   messages.map((m) => {
                     const mine = m.sender_user_id === currentUserId;
+                    const deletable = mine && Boolean(adapter.deleteMessage);
                     return (
                       <div
                         key={m.id}
-                        className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                        className={`group flex items-center gap-1.5 ${
+                          mine ? "justify-end" : "justify-start"
+                        }`}
                       >
+                        {deletable && (
+                          <button
+                            onClick={() => setConfirmTarget(m)}
+                            disabled={deletingId === m.id}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity disabled:opacity-50"
+                            aria-label="Supprimer ce message"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         <div
                           className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
                             mine
                               ? "bg-[#063b1e] text-white rounded-br-md"
                               : "bg-slate-100 text-slate-800 rounded-bl-md"
-                          }`}
+                          } ${deletingId === m.id ? "opacity-50" : ""}`}
                         >
                           <p className="whitespace-pre-wrap break-words">{m.body}</p>
                           <p
@@ -243,6 +287,15 @@ export default function MessagingPanel({
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(confirmTarget)}
+        title="Supprimer ce message ?"
+        message="Le message sera supprimé pour tous les participants de la conversation. Cette action est irréversible."
+        busy={Boolean(confirmTarget && deletingId === confirmTarget.id)}
+        onConfirm={() => confirmTarget && handleDelete(confirmTarget)}
+        onCancel={() => setConfirmTarget(null)}
+      />
     </>
   );
 }

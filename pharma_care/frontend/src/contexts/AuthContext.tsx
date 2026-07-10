@@ -88,7 +88,11 @@ type AuthContextValue = {
   patientProfile: PatientProfile | null;
   pharmacyLoading: boolean;
   pharmacyError: string | null;
-  login: (email: string, password: string) => Promise<UserRole>;
+  login: (
+    email: string,
+    password: string,
+    expectedRole?: UserRole
+  ) => Promise<UserRole>;
   signup: (payload: SignupPayload) => Promise<void>;
   signupPatient: (payload: PatientSignupPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -190,17 +194,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadPharmacy]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, expectedRole?: UserRole) => {
       const res = await api<{ session: Session; user: User }>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+      const role = resolveRole(res.user) ?? "facility_admin";
+      // Enforce the selected portal BEFORE installing the session, so a
+      // mismatch never leaves the user half-logged-in on the wrong side.
+      if (expectedRole && role !== expectedRole) {
+        throw new Error(
+          role === "patient"
+            ? "Ce compte est un compte patient. Sélectionnez « Patient » pour vous connecter."
+            : "Ce compte est un compte pharmacie. Sélectionnez « Pharmacie » pour vous connecter."
+        );
+      }
       await supabase.auth.setSession({
         access_token: res.session.access_token,
         refresh_token: res.session.refresh_token,
       });
       // onAuthStateChange listener will fire and call loadPharmacy automatically
-      return resolveRole(res.user) ?? "facility_admin";
+      return role;
     },
     []
   );

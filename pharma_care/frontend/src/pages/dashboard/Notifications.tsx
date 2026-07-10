@@ -7,6 +7,7 @@ import ErrorBanner from "../../components/ui/ErrorBanner";
 import { SkeletonLines } from "../../components/ui/Skeleton";
 import { api } from "../../api/client";
 import {
+  deleteNotification,
   getInboxNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -16,6 +17,7 @@ const adapter: NotificationsAdapter = {
   list: getInboxNotifications,
   markRead: markNotificationRead,
   markAllRead: markAllNotificationsRead,
+  remove: deleteNotification,
 };
 
 type Alert = { type: string; severity: string; message: string };

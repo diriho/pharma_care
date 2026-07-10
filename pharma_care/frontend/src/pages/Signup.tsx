@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Building2, UserRound } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import RoleToggle, { type AccountType } from "../components/ui/RoleToggle";
 
 type Field = {
   key: keyof FormState;
@@ -98,7 +98,7 @@ const PATIENT_INITIAL: PatientFormState = {
 export default function Signup() {
   const { signup, signupPatient } = useAuth();
   const navigate = useNavigate();
-  const [accountType, setAccountType] = useState<"pharmacy" | "patient">("pharmacy");
+  const [accountType, setAccountType] = useState<AccountType>("pharmacy");
   const [form, setForm] = useState<FormState>(INITIAL);
   const [patientForm, setPatientForm] = useState<PatientFormState>(PATIENT_INITIAL);
   const [error, setError] = useState<string | null>(null);
@@ -198,31 +198,13 @@ export default function Signup() {
               : "Créez votre espace patient pour commander vos médicaments."}
           </p>
 
-          <div className="grid grid-cols-2 gap-2 p-1 mb-6 bg-[#f4f4f5] rounded-xl">
-            {(
-              [
-                { key: "pharmacy", label: "Pharmacie", icon: Building2 },
-                { key: "patient", label: "Patient", icon: UserRound },
-              ] as const
-            ).map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  setAccountType(key);
-                  setError(null);
-                }}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                  accountType === key
-                    ? "bg-[#063b1e] text-[#6eff8a] shadow"
-                    : "text-[#3f3f46] hover:bg-white"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </div>
+          <RoleToggle
+            value={accountType}
+            onChange={(v) => {
+              setAccountType(v);
+              setError(null);
+            }}
+          />
 
           {accountType === "patient" ? (
             <form onSubmit={onSubmitPatient} className="space-y-5">

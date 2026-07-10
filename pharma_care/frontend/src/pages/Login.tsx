@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { homePathForRole, useAuth } from "../contexts/AuthContext";
+import RoleToggle, { type AccountType } from "../components/ui/RoleToggle";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [accountType, setAccountType] = useState<AccountType>("pharmacy");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +17,11 @@ export default function Login() {
     setError(null);
     setSubmitting(true);
     try {
-      const role = await login(email, password);
+      const role = await login(
+        email,
+        password,
+        accountType === "patient" ? "patient" : "facility_admin"
+      );
       navigate(homePathForRole(role));
     } catch (err) {
       setError((err as Error).message);
@@ -46,8 +52,18 @@ export default function Login() {
         <div className="bg-white rounded-2xl shadow-xl border border-[#f0f0f0] p-8">
           <h1 className="text-2xl font-bold text-[#063b1e] mb-1">Connexion</h1>
           <p className="text-sm text-[#71717a] mb-6">
-            Accédez à votre tableau de bord Pharma Core.
+            {accountType === "pharmacy"
+              ? "Accédez à votre tableau de bord Pharma Core."
+              : "Accédez à votre espace patient Pharma Core."}
           </p>
+
+          <RoleToggle
+            value={accountType}
+            onChange={(v) => {
+              setAccountType(v);
+              setError(null);
+            }}
+          />
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
@@ -60,7 +76,11 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e] focus:border-transparent"
-                placeholder="pharmacien@example.bi"
+                placeholder={
+                  accountType === "pharmacy"
+                    ? "pharmacien@example.bi"
+                    : "patient@example.bi"
+                }
               />
             </div>
             <div>
