@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Building2, UserRound } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 type Field = {
@@ -72,15 +73,71 @@ const PHARMACY_FIELDS: Field[] = [
   },
 ];
 
+type PatientFormState = {
+  email: string;
+  password: string;
+  fullName: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  allergies: string;
+};
+
+const PATIENT_INITIAL: PatientFormState = {
+  email: "",
+  password: "",
+  fullName: "",
+  phone: "",
+  dateOfBirth: "",
+  gender: "",
+  address: "",
+  allergies: "",
+};
+
 export default function Signup() {
-  const { signup } = useAuth();
+  const { signup, signupPatient } = useAuth();
   const navigate = useNavigate();
+  const [accountType, setAccountType] = useState<"pharmacy" | "patient">("pharmacy");
   const [form, setForm] = useState<FormState>(INITIAL);
+  const [patientForm, setPatientForm] = useState<PatientFormState>(PATIENT_INITIAL);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((s) => ({ ...s, [key]: value }));
+  }
+
+  function setPatient<K extends keyof PatientFormState>(
+    key: K,
+    value: PatientFormState[K]
+  ) {
+    setPatientForm((s) => ({ ...s, [key]: value }));
+  }
+
+  async function onSubmitPatient(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await signupPatient({
+        email: patientForm.email,
+        password: patientForm.password,
+        profile: {
+          fullName: patientForm.fullName.trim(),
+          phone: patientForm.phone.trim() || undefined,
+          dateOfBirth: patientForm.dateOfBirth || undefined,
+          gender: patientForm.gender || undefined,
+          address: patientForm.address.trim() || undefined,
+          allergies: patientForm.allergies.trim() || undefined,
+        },
+      });
+      navigate("/patient");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -133,12 +190,162 @@ export default function Signup() {
 
         <div className="bg-white rounded-2xl shadow-xl border border-[#f0f0f0] p-8">
           <h1 className="text-2xl font-bold text-[#063b1e] mb-1">
-            Créer un compte pharmacie
+            {accountType === "pharmacy" ? "Créer un compte pharmacie" : "Créer un compte patient"}
           </h1>
           <p className="text-sm text-[#71717a] mb-6">
-            Renseignez les informations de votre officine pour commencer.
+            {accountType === "pharmacy"
+              ? "Renseignez les informations de votre officine pour commencer."
+              : "Créez votre espace patient pour commander vos médicaments."}
           </p>
 
+          <div className="grid grid-cols-2 gap-2 p-1 mb-6 bg-[#f4f4f5] rounded-xl">
+            {(
+              [
+                { key: "pharmacy", label: "Pharmacie", icon: Building2 },
+                { key: "patient", label: "Patient", icon: UserRound },
+              ] as const
+            ).map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => {
+                  setAccountType(key);
+                  setError(null);
+                }}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                  accountType === key
+                    ? "bg-[#063b1e] text-[#6eff8a] shadow"
+                    : "text-[#3f3f46] hover:bg-white"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {accountType === "patient" ? (
+            <form onSubmit={onSubmitPatient} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={patientForm.email}
+                    onChange={(e) => setPatient("email", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    placeholder="patient@example.bi"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
+                    Mot de passe <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={patientForm.password}
+                    onChange={(e) => setPatient("password", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    placeholder="Minimum 6 caractères"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
+                    Nom complet <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={patientForm.fullName}
+                    onChange={(e) => setPatient("fullName", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    placeholder="Jean Ndayizeye"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
+                    Téléphone
+                  </label>
+                  <input
+                    type="tel"
+                    value={patientForm.phone}
+                    onChange={(e) => setPatient("phone", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    placeholder="+257 79 ..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
+                    Date de naissance
+                  </label>
+                  <input
+                    type="date"
+                    value={patientForm.dateOfBirth}
+                    onChange={(e) => setPatient("dateOfBirth", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
+                    Genre
+                  </label>
+                  <select
+                    value={patientForm.gender}
+                    onChange={(e) => setPatient("gender", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e] bg-white"
+                  >
+                    <option value="">—</option>
+                    <option value="femme">Femme</option>
+                    <option value="homme">Homme</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
+                    Adresse
+                  </label>
+                  <input
+                    type="text"
+                    value={patientForm.address}
+                    onChange={(e) => setPatient("address", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    placeholder="Avenue, Quartier"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
+                    Allergies connues
+                  </label>
+                  <input
+                    type="text"
+                    value={patientForm.allergies}
+                    onChange={(e) => setPatient("allergies", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    placeholder="Pénicilline, arachides… (optionnel)"
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3 bg-[#063b1e] text-[#6eff8a] rounded-lg font-bold hover:bg-black disabled:opacity-60 transition-colors"
+              >
+                {submitting ? "Création en cours…" : "Créer mon compte patient"}
+              </button>
+            </form>
+          ) : (
           <form onSubmit={onSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -211,6 +418,7 @@ export default function Signup() {
               {submitting ? "Création en cours…" : "Créer mon compte"}
             </button>
           </form>
+          )}
 
           <p className="text-sm text-center text-[#71717a] mt-6">
             Déjà inscrit ?{" "}

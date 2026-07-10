@@ -12,6 +12,29 @@ import { supabase } from "../lib/supabase";
 import { api } from "../api/client";
 
 // type definitions for this app
+export type UserRole = "facility_admin" | "patient";
+
+export type PatientProfile = {
+  user_id: string;
+  full_name: string;
+  phone: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  address: string | null;
+  allergies: string | null;
+};
+
+// Roles are stored server-side in app_metadata; accounts predating roles are admins.
+export function resolveRole(user: User | null): UserRole | null {
+  if (!user) return null;
+  return user.app_metadata?.role === "patient" ? "patient" : "facility_admin";
+}
+
+// Landing page for a role after login
+export function homePathForRole(role: UserRole | null): string {
+  return role === "patient" ? "/patient" : "/dashboard";
+}
+
 export type Pharmacy = {
   user_id: string;
   name: string;
@@ -43,15 +66,31 @@ export type SignupPayload = {
   };
 };
 
+export type PatientSignupPayload = {
+  email: string;
+  password: string;
+  profile: {
+    fullName: string;
+    phone?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    address?: string;
+    allergies?: string;
+  };
+};
+
 type AuthContextValue = {
   loading: boolean;
   user: User | null;
   session: Session | null;
+  role: UserRole | null;
   pharmacy: Pharmacy | null;
+  patientProfile: PatientProfile | null;
   pharmacyLoading: boolean;
   pharmacyError: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<UserRole>;
   signup: (payload: SignupPayload) => Promise<void>;
+  signupPatient: (payload: PatientSignupPayload) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   refreshPharmacy: () => Promise<void>;
@@ -62,23 +101,28 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
+  const [patientProfile, setPatientProfile] = useState<PatientProfile | null>(null);
   const [pharmacyLoading, setPharmacyLoading] = useState(false);
   const [pharmacyError, setPharmacyError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Load the role-specific profile (pharmacy for admins, patient profile for patients)
   const loadPharmacy = useCallback(async () => {
     setPharmacyLoading(true);
     setPharmacyError(null);
     try {
-      const data = await api<{ user: User; pharmacy: Pharmacy | null }>("/auth/me");
-      // log check before setting
-      console.log("[AuthContext] loadPharmacy success");
+      const data = await api<{
+        user: User;
+        role: UserRole;
+        pharmacy: Pharmacy | null;
+        patientProfile: PatientProfile | null;
+      }>("/auth/me");
       setPharmacy(data.pharmacy);
-
-      // error catch
+      setPatientProfile(data.patientProfile ?? null);
     } catch (err) {
       console.error("[AuthContext] loadPharmacy failed:", err);
       setPharmacy(null);
+      setPatientProfile(null);
       setPharmacyError((err as Error).message);
     } finally {
       setPharmacyLoading(false);
@@ -90,12 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initializeAuth() {
       try {
-        console.log("[AuthContext] Initial getSession start");
-
         const { data, error } = await supabase.auth.getSession();
-
-        console.log("[AuthContext] Initial getSession complete");
-
         if (error) {
           console.error("[AuthContext] getSession error:", error);
         }
@@ -106,9 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (data.session) {
           try {
-            console.log("[AuthContext] Initial loadPharmacy start");
             await loadPharmacy();
-            console.log("[AuthContext] Initial loadPharmacy complete");
           } catch (err) {
             console.error("[AuthContext] Failed to load pharmacy:", err);
           }
@@ -129,8 +166,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return;
 
-      console.log("[AuthContext] Auth state changed:", _event);
-
       setSession(newSession);
 
       if (newSession) {
@@ -144,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }, 0);
       } else {
         setPharmacy(null);
+        setPatientProfile(null);
       }
     });
 
@@ -164,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refresh_token: res.session.refresh_token,
       });
       // onAuthStateChange listener will fire and call loadPharmacy automatically
+      return resolveRole(res.user) ?? "facility_admin";
     },
     []
   );
@@ -183,6 +220,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const signupPatient = useCallback(
+    async (payload: PatientSignupPayload) => {
+      const res = await api<{ session: Session; user: User }>(
+        "/auth/signup/patient",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+      await supabase.auth.setSession({
+        access_token: res.session.access_token,
+        refresh_token: res.session.refresh_token,
+      });
+      // onAuthStateChange listener will fire and call loadPharmacy automatically
+    },
+    []
+  );
+
   const logout = useCallback(async () => {
     try {
       await api("/auth/logout", { method: "POST" });
@@ -191,12 +246,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     await supabase.auth.signOut();
     setPharmacy(null);
+    setPatientProfile(null);
   }, []);
 
   const deleteAccount = useCallback(async () => {
     await api("/auth/account", { method: "DELETE" });
     await supabase.auth.signOut();
     setPharmacy(null);
+    setPatientProfile(null);
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -204,16 +261,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       user: session?.user ?? null,
       session,
+      role: resolveRole(session?.user ?? null),
       pharmacy,
+      patientProfile,
       pharmacyLoading,
       pharmacyError,
       login,
       signup,
+      signupPatient,
       logout,
       deleteAccount,
       refreshPharmacy: loadPharmacy,
     }),
-    [loading, session, pharmacy, pharmacyLoading, pharmacyError, login, signup, logout, deleteAccount, loadPharmacy]
+    [loading, session, pharmacy, patientProfile, pharmacyLoading, pharmacyError, login, signup, signupPatient, logout, deleteAccount, loadPharmacy]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

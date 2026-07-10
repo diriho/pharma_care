@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { homePathForRole, useAuth } from "../contexts/AuthContext";
 
 export default function Login() {
   const { login } = useAuth();
@@ -15,8 +15,8 @@ export default function Login() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate("/dashboard");
+      const role = await login(email, password);
+      navigate(homePathForRole(role));
     } catch (err) {
       setError((err as Error).message);
     } finally {

@@ -1,45 +1,27 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Pill,
-  Users,
-  Truck,
-  BarChart3,
-  Settings,
-  Download,
-  LogOut,
-  Trash2,
-  Bell,
-  
-} from "lucide-react";
+import { Download, LogOut, Trash2, Bell } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { api, apiDownload } from "../../api/client";
 import Search from "./Search";
+import { DASHBOARD_NAV } from "./nav";
+import { getInboxNotifications } from "../../services/pharmacyAdmin";
+import { useRealtimeTable } from "../../hooks/useRealtimeTable";
+import type { PatientNotification } from "../../types/patient";
 
 type Alert = { type: string; severity: string; message: string };
-
-// router descriptions
-const NAV = [
-  { to: "/dashboard", label: "Tableau de Bord", icon: LayoutDashboard, end: true },
-  { to: "/dashboard/pos", label: "Caisse (POS)", icon: ShoppingCart },
-  { to: "/dashboard/inventory", label: "Inventaire Médicaments", icon: Pill },
-  { to: "/dashboard/patients", label: "Patients & Clients", icon: Users },
-  { to: "/dashboard/suppliers", label: "Fournisseurs", icon: Truck },
-  { to: "/dashboard/analytics", label: "Analyses", icon: BarChart3 },
-  { to: "/dashboard/settings", label: "Profile", icon: Settings },
-];
 
 
 // main dashboard layout with sidebar and header
 export default function DashboardLayout() {
-  const { pharmacy, logout, deleteAccount, user } = useAuth();
+  const { pharmacy, logout, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [showAlerts, setShowAlerts] = useState(false);
+  const [unreadInbox, setUnreadInbox] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // Stock/expiry alerts are computed from inventory levels (no realtime source),
+  // so they keep a slow poll.
   useEffect(() => {
     let mounted = true;
     async function tick() {
@@ -57,6 +39,30 @@ export default function DashboardLayout() {
       clearInterval(id);
     };
   }, []);
+
+  const refreshInbox = useCallback(async () => {
+    try {
+      const data = await getInboxNotifications();
+      setUnreadInbox(data.unread);
+    } catch {
+      // session may be expiring — ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshInbox();
+  }, [refreshInbox]);
+
+  // Live unread badge for orders/ratings/messages notifications
+  // (RLS only delivers this pharmacy's rows).
+  useRealtimeTable<PatientNotification>({
+    table: "notifications",
+    events: ["INSERT", "UPDATE"],
+    onChange: refreshInbox,
+    onResync: refreshInbox,
+  });
+
+  const bellCount = unreadInbox + alerts.length;
 
   // logout handling
   async function handleLogout() {
@@ -115,7 +121,7 @@ export default function DashboardLayout() {
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-          {NAV.map((item) => {
+          {DASHBOARD_NAV.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -165,48 +171,24 @@ export default function DashboardLayout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {/* <p className="text-sm font-semibold text-slate-900">{user?.email}</p> */}
             <Search />
-
           </div>
-          <div className="relative">
-            <button
-              onClick={() => setShowAlerts((s) => !s)}
-              className="relative p-2 rounded-lg hover:bg-slate-100"
-            >
-              <Bell className="h-5 w-5 text-slate-700" />
-              {alerts.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">
-                  {alerts.length}
-                </span>
-              )}
-            </button>
-            {showAlerts && (
-              <div className="absolute right-0 top-12 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <h3 className="font-bold text-slate-900">Notifications</h3>
-                </div>
-                {alerts.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-500">Aucune alerte.</p>
-                ) : (
-                  <ul className="divide-y divide-slate-100">
-                    {alerts.map((a, i) => (
-                      <li
-                        key={i}
-                        className={`px-4 py-3 text-sm ${
-                          a.severity === "critical"
-                            ? "text-red-700"
-                            : "text-amber-700"
-                        }`}
-                      >
-                        {a.message}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+          <NavLink
+            to="/dashboard/notifications"
+            className={({ isActive }) =>
+              `relative p-2 rounded-lg transition-colors ${
+                isActive ? "bg-emerald-50" : "hover:bg-slate-100"
+              }`
+            }
+            aria-label="Notifications"
+          >
+            <Bell className="h-5 w-5 text-slate-700" />
+            {bellCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">
+                {bellCount}
+              </span>
             )}
-          </div>
+          </NavLink>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">

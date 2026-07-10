@@ -4,6 +4,9 @@ import { api } from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
 import { formatCurrency } from "../../lib/format";
 import PageHeader from "../../components/PageHeader";
+import WeeklyPatientVolume from "../../components/dashboard/WeeklyPatientVolume";
+import { getWeeklyPatientVolume } from "../../services/patientAnalytics";
+import type { WeeklyPatientData } from "../../types/analytics";
 
 type Analytics = {
   counts: { medicines: number; patients: number; suppliers: number; sales: number };
@@ -20,26 +23,35 @@ export default function Overview() {
   const [n, setN] = useState<Alerts["alerts"]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [weekly, setWeekly] = useState<WeeklyPatientData[]>([]);
+  const [weeklyLoading, setWeeklyLoading] = useState(true);
+  const [weeklyError, setWeeklyError] = useState<string | null>(null);
+
+  async function loadWeekly() {
+    setWeeklyLoading(true);
+    setWeeklyError(null);
+    try {
+      setWeekly(await getWeeklyPatientVolume());
+    } catch (err) {
+      setWeeklyError((err as Error).message);
+    } finally {
+      setWeeklyLoading(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
     setError(null);
     try {
-      console.log("[Overview] Starting data fetch...");
-      console.log("[Overview] About to call api for analytics and notifications");
-      const analyticsPromise = api<Analytics>("/data/analytics");
-      const notificationsPromise = api<Alerts>("/data/notifications");
-      console.log("[Overview] Promises created, waiting for both...");
-      const [analytics, notif] = await Promise.all([analyticsPromise, notificationsPromise]);
-      console.log("[Overview] Data loaded successfully:", { analytics, notif });
+      const [analytics, notif] = await Promise.all([
+        api<Analytics>("/data/analytics"),
+        api<Alerts>("/data/notifications"),
+      ]);
       setA(analytics);
       setN(notif.alerts);
     } catch (err) {
-      const errorMsg = (err as Error).message;
-      console.error("[Overview] Error loading data:", errorMsg);
-      setError(errorMsg);
+      setError((err as Error).message);
     } finally {
-      console.log("[Overview] Setting loading to false");
       setLoading(false);
     }
   }
@@ -47,6 +59,7 @@ export default function Overview() {
   useEffect(() => {
     if (!pharmacy) return;
     load();
+    loadWeekly();
   }, [pharmacy]);
 
   const currency = pharmacy?.currency || "FBU";
@@ -107,6 +120,15 @@ export default function Overview() {
             <ValueCard
               label="Valeur du stock (vente)"
               value={formatCurrency(a?.retailValue ?? 0, currency)}
+            />
+          </div>
+
+          <div className="mb-6">
+            <WeeklyPatientVolume
+              data={weekly}
+              loading={weeklyLoading}
+              error={weeklyError}
+              onRetry={loadWeekly}
             />
           </div>
 

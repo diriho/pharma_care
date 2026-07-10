@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { admin } from "../client";
+import { admin, credentialClient } from "../client";
 import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 
 const router = Router();
@@ -63,6 +63,7 @@ router.post("/signup", async (req: Request, res: Response) => {
     password,
     email_confirm: true,
     user_metadata: { pharmacy_name: pharmacy.name },
+    app_metadata: { role: "facility_admin" },
   });
 
   if (createError || !created?.user) {
@@ -91,7 +92,66 @@ router.post("/signup", async (req: Request, res: Response) => {
     return res.status(500).json({ error: `Échec création profil: ${settingsError.message}` });
   }
 
-  const { data: signIn, error: signInError } = await admin.auth.signInWithPassword({
+  const { data: signIn, error: signInError } = await credentialClient().auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (signInError) {
+    return res.status(500).json({ error: signInError.message });
+  }
+  return res.json({ session: signIn.session, user: signIn.user });
+});
+
+interface PatientProfilePayload {
+  fullName?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: string;
+  allergies?: string;
+}
+
+// Patient signup: creates an auth user with the "patient" role and a patient profile
+router.post("/signup/patient", async (req: Request, res: Response) => {
+  const { email, password, profile } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email et mot de passe requis" });
+  }
+  if (String(password).length < 6) {
+    return res.status(400).json({ error: "Mot de passe trop court (min 6 caractères)" });
+  }
+  const p = (profile as PatientProfilePayload) || {};
+  if (!p.fullName || !String(p.fullName).trim()) {
+    return res.status(400).json({ error: "Nom complet requis" });
+  }
+
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: p.fullName },
+    app_metadata: { role: "patient" },
+  });
+  if (createError || !created?.user) {
+    return res.status(400).json({ error: createError?.message || "Création utilisateur échouée" });
+  }
+  const userId = created.user.id;
+
+  const { error: profileError } = await admin.from("patient_profiles").insert({
+    user_id: userId,
+    full_name: String(p.fullName).trim(),
+    phone: p.phone || null,
+    date_of_birth: p.dateOfBirth || null,
+    gender: p.gender || null,
+    address: p.address || null,
+    allergies: p.allergies || null,
+  });
+  if (profileError) {
+    await admin.auth.admin.deleteUser(userId).catch(() => {});
+    return res.status(500).json({ error: `Échec création profil: ${profileError.message}` });
+  }
+
+  const { data: signIn, error: signInError } = await credentialClient().auth.signInWithPassword({
     email,
     password,
   });
@@ -108,7 +168,7 @@ router.post("/login", async (req: Request, res: Response) => {
   if (!email || !password) {
     return res.status(400).json({ error: "Email et mot de passe requis" });
   }
-  const { data, error } = await admin.auth.signInWithPassword({ email, password });
+  const { data, error } = await credentialClient().auth.signInWithPassword({ email, password });
   if (error) return res.status(401).json({ error: error.message });
   return res.json({ session: data.session, user: data.user });
 });
@@ -121,16 +181,29 @@ router.post("/logout", requireAuth, async (req: Request, res: Response) => {
 });
 
 router.get("/me", requireAuth, async (req: Request, res: Response) => {
-  const userId = (req as AuthedRequest).user.id;
+  const { user, role } = req as AuthedRequest;
+
+  if (role === "patient") {
+    const { data, error } = await admin
+      .from("patient_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+    if (error && error.code !== "PGRST116") {
+      return res.status(500).json({ error: error.message });
+    }
+    return res.json({ user, role, pharmacy: null, patientProfile: data || null });
+  }
+
   const { data, error } = await admin
     .from("pharmacy_settings")
     .select("*")
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .single();
   if (error && error.code !== "PGRST116") {
     return res.status(500).json({ error: error.message });
   }
-  return res.json({ user: (req as AuthedRequest).user, pharmacy: data || null });
+  return res.json({ user, role, pharmacy: data || null, patientProfile: null });
 });
 
 // route to delete the user account and all associated data
@@ -144,6 +217,8 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
     "suppliers",
     "notifications",
     "pharmacy_settings",
+    "patient_profiles",
+    "patient_medications",
   ];
   // iterate over the tables and delete all rows where user_id matches
   for (const t of tables) {

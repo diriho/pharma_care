@@ -32,6 +32,12 @@ function getAdmin(): SupabaseClient {
   return _admin;
 }
 
+// IMPORTANT: never call user-session methods (signInWithPassword, setSession, …)
+// on this client. supabase-js stores the resulting session in memory even with
+// persistSession:false, and every later .from()/.storage call would then send
+// that user's JWT instead of the service key — silently demoting this client
+// from service_role (bypasses RLS) to `authenticated` (subject to RLS).
+// Use credentialClient() for anything that verifies user credentials.
 export const admin = new Proxy({} as SupabaseClient, {
   get(_target, prop: string) {
     const client = getAdmin() as unknown as Record<string, unknown>;
@@ -39,6 +45,18 @@ export const admin = new Proxy({} as SupabaseClient, {
     return typeof value === "function" ? (value as Function).bind(client) : value;
   },
 });
+
+// Fresh, throwaway anon-key client for credential verification (login/signup).
+// A new instance per call guarantees the session it acquires can never leak
+// into the shared service-role client above.
+export function credentialClient(): SupabaseClient {
+  if (!url || !anonKey) {
+    throw new Error("Supabase non configuré: SUPABASE_URL et SUPABASE_ANON_KEY requis");
+  }
+  return createClient(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 export function userClient(accessToken: string): SupabaseClient {
   if (!url || !anonKey) {

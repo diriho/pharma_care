@@ -8,6 +8,7 @@ import cors from "cors";
 
 import authRoutes from "./supabase/auth/routes";
 import dataRoutes from "./supabase/dataHandler/routes";
+import patientRoutes from "./supabase/patient/routes";
 
 const app = express();
 app.use(
@@ -23,6 +24,7 @@ app.get("/api/health", (_req: Request, res: Response) => {
 });
 app.use("/api/auth", authRoutes);
 app.use("/api/data", dataRoutes);
+app.use("/api/patient", patientRoutes);
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error("[server]", err);

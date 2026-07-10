@@ -63,9 +63,7 @@ export async function api<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  console.log(`[api] Getting auth header for ${path}...`);
   const auth = await authHeader();
-  console.log(`[api] Auth header retrieved for ${path}`);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...auth,
@@ -77,13 +75,11 @@ export async function api<T = unknown>(
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
   try {
-    console.log(`[api] Fetching ${path}...`);
     const res = await fetch(`${BASE}${path}`, {
       ...options,
       headers,
       signal: controller.signal
     });
-    console.log(`[api] Response status for ${path}: ${res.status}`);
     const text = await res.text();
     let body: unknown = null;
     try {
@@ -98,10 +94,8 @@ export async function api<T = unknown>(
       const message =
         (body && typeof body === "object" && "error" in body && (body as { error?: string }).error) ||
         `Request failed (${res.status})`;
-      console.error(`[api] Error on ${path}:`, message);
       throw new Error(message as string);
     }
-    console.log(`[api] Successfully fetched ${path}`, body);
     return body as T;
   } finally {
     clearTimeout(timeoutId);

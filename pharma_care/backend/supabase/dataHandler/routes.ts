@@ -1,9 +1,24 @@
 import { Router, type Request, type Response } from "express";
 import { admin } from "../client";
-import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { requireAuth, requireRole, type AuthedRequest } from "../../middleware/auth";
+import {
+  createNotification,
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "../services/notifications";
+import {
+  getConversationForUser,
+  getMessages,
+  listConversations,
+  sendMessage,
+} from "../services/messaging";
+import { getPrescriptionSignedUrl } from "../services/prescriptions";
 
 const router = Router();
 router.use(requireAuth);
+// The /api/data surface is the facility dashboard API — patients use /api/patient
+router.use(requireRole("facility_admin"));
 
 function scoped(table: string, userId: string) {
   return admin.from(table).select("*").eq("user_id", userId);
@@ -297,11 +312,39 @@ router.get("/notifications", async (req: Request, res: Response) => {
   }
 });
 
+// Persisted notification inbox for the pharmacy (new orders, ratings, messages…).
+// Distinct from GET /notifications above, which computes stock/expiry alerts.
+router.get("/notifications/inbox", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    res.json(await listNotifications(userId));
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+router.post("/notifications/read-all", async (req: Request, res: Response) => {
+  try {
+    await markAllNotificationsRead((req as AuthedRequest).user.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+router.post("/notifications/:id/read", async (req: Request, res: Response) => {
+  try {
+    await markNotificationRead((req as AuthedRequest).user.id, req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
 // Analytics route to fetch counts, inventory value, revenue, and sales trends
 router.get("/analytics", async (req: Request, res: Response) => {
   try {
     const userId = (req as AuthedRequest).user.id;
-    console.log("[analytics] Fetching analytics for user:", userId);
     const [medsRes, salesRes, patientsRes, suppliersRes] = await Promise.all([
       scoped("medicines", userId),
       scoped("sales", userId),
@@ -348,11 +391,202 @@ router.get("/analytics", async (req: Request, res: Response) => {
       salesByDay,
       topMedicines,
     };
-    console.log("[analytics] Returning response:", response);
     res.json(response);
   } catch (err) {
     console.error("[analytics] Error:", err);
     res.status(500).json({ error: (err as Error).message || "Analytics fetch failed" });
+  }
+});
+
+const ORDER_STATUSES = [
+  "pending",
+  "approved",
+  "preparing",
+  "ready_for_pickup",
+  "completed",
+  "cancelled",
+] as const;
+
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: "en attente",
+  approved: "approuvée",
+  preparing: "en préparation",
+  ready_for_pickup: "prête pour retrait",
+  completed: "terminée",
+  cancelled: "annulée",
+};
+
+// Patient orders received by this pharmacy
+router.get("/patient-orders", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const { data: orders, error } = await admin
+      .from("medication_orders")
+      .select("*")
+      .eq("pharmacy_user_id", userId)
+      .order("created_at", { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+
+    const list = orders || [];
+    const patientIds = Array.from(
+      new Set(list.map((o: { patient_user_id: string }) => o.patient_user_id))
+    );
+    const names = new Map<string, string>();
+    if (patientIds.length > 0) {
+      const { data: profiles } = await admin
+        .from("patient_profiles")
+        .select("user_id,full_name")
+        .in("user_id", patientIds);
+      for (const p of profiles || []) names.set(p.user_id, p.full_name);
+    }
+    res.json(
+      list.map((o: { patient_user_id: string }) => ({
+        ...o,
+        patient_name: names.get(o.patient_user_id) || "Patient",
+      }))
+    );
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+// Signed URL for the prescription attached to an order received by this pharmacy
+router.get("/patient-orders/:id/prescription", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const { data: order } = await admin
+      .from("medication_orders")
+      .select("prescription_path")
+      .eq("id", req.params.id)
+      .eq("pharmacy_user_id", userId)
+      .single();
+    if (!order?.prescription_path) {
+      return res.status(404).json({ error: "Aucune ordonnance pour cette commande" });
+    }
+    res.json({ url: await getPrescriptionSignedUrl(order.prescription_path) });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+// Update an order's status and notify the patient
+router.put("/patient-orders/:id/status", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const status = String(req.body?.status || "");
+    if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) {
+      return res.status(400).json({ error: "Statut invalide" });
+    }
+    const { data: order } = await admin
+      .from("medication_orders")
+      .select("*")
+      .eq("id", req.params.id)
+      .eq("pharmacy_user_id", userId)
+      .single();
+    if (!order) return res.status(404).json({ error: "Commande introuvable" });
+
+    const { data, error } = await admin
+      .from("medication_orders")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+
+    await createNotification(
+      order.patient_user_id,
+      "order_status",
+      `Votre commande est ${ORDER_STATUS_LABELS[status] || status}`,
+      { order_id: order.id, status }
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+// Pharmacy side of patient messaging (list threads, read, reply)
+router.get("/conversations", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    res.json(await listConversations(userId, "pharmacy"));
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+router.get("/conversations/:id/messages", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const conversation = await getConversationForUser(req.params.id, userId);
+    if (!conversation) return res.status(404).json({ error: "Conversation introuvable" });
+    res.json(await getMessages(conversation.id, userId));
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+router.post("/conversations/:id/messages", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const body = String(req.body?.body || "").trim();
+    if (!body) return res.status(400).json({ error: "Message vide" });
+    const conversation = await getConversationForUser(req.params.id, userId);
+    if (!conversation) return res.status(404).json({ error: "Conversation introuvable" });
+    res.status(201).json(await sendMessage(conversation, userId, body));
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+const WEEKDAYS_FR = [
+  "Dimanche",
+  "Lundi",
+  "Mardi",
+  "Mercredi",
+  "Jeudi",
+  "Vendredi",
+  "Samedi",
+];
+
+// Weekly patient volume: patients served per day over the last 7 days,
+// derived from sales (distinct patients + anonymous walk-in sales).
+router.get("/analytics/weekly-patients", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+
+    const { data: sales, error } = await admin
+      .from("sales")
+      .select("patient_id, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", start.toISOString());
+    if (error) return res.status(500).json({ error: error.message });
+
+    type DayBucket = { patients: Set<string>; walkIns: number };
+    const buckets = new Map<string, DayBucket>();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      buckets.set(d.toISOString().slice(0, 10), { patients: new Set(), walkIns: 0 });
+    }
+    for (const s of (sales || []) as { patient_id: string | null; created_at: string }[]) {
+      const key = (s.created_at || "").slice(0, 10);
+      const bucket = buckets.get(key);
+      if (!bucket) continue;
+      if (s.patient_id) bucket.patients.add(s.patient_id);
+      else bucket.walkIns += 1;
+    }
+
+    const result = Array.from(buckets.entries()).map(([key, bucket]) => ({
+      day: WEEKDAYS_FR[new Date(`${key}T00:00:00`).getDay()],
+      patients: bucket.patients.size + bucket.walkIns,
+    }));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
   }
 });
 
