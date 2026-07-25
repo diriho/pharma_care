@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 // header component with the app name and navigation links
 export default function Header() {
   const { user } = useAuth();
+  
   return (
     <header className="fixed top-0 left-0 right-0 z-40 backdrop-blur bg-white/80 border-b border-[#f0f0f0]">
       <div className="max-w-[1200px] mx-auto flex items-center justify-between px-6 py-4">
