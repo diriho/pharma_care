@@ -13,7 +13,7 @@ cp .env.example .env   # fill in Supabase URL + anon key (optional, only for cli
 ## Run
 
 ```bash
-npm run dev    # http://localhost:5173, proxies /api to http://localhost:4000
+npm run dev    # http://localhost:5173, proxies /api to http://localhost:3000
 npm run build  # production bundle
 ```
 

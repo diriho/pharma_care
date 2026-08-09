@@ -19,7 +19,7 @@ npm run dev   # auto-reload on file changes
 npm start
 ```
 
-The API listens on `http://localhost:4000`.
+The API listens on `http://localhost:3000`.
 
 ## Endpoints
 

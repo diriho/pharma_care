@@ -37,7 +37,7 @@ pharma_care/
 cd backend
 cp .env.example .env   # paste your Supabase keys
 npm install
-npm run dev            # http://localhost:4000
+npm run dev            # http://localhost:3000
 ```
 
 ### 2. Start the frontend
