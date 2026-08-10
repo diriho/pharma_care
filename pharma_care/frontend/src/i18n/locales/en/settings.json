@@ -1,0 +1,27 @@
+{
+  "pharmacy": {
+    "title": "Pharmacy Settings",
+    "subtitle": "Update your pharmacy's information and alert thresholds.",
+    "exportHistory": "Export history (JSON)",
+    "saved": "Settings saved.",
+    "loadError": "Error loading pharmacy profile: {{message}}",
+    "noProfile": "No pharmacy profile linked to this account. Contact the administrator.",
+    "fields": {
+      "name": "Pharmacy name",
+      "phone": "Phone",
+      "address": "Address",
+      "commune": "Commune",
+      "province": "Province",
+      "currency": "Currency",
+      "nif": "NIF",
+      "rc": "RC",
+      "expiryAlertMonths": "Expiry alert (months)",
+      "lowStockAlertLevel": "General low-stock threshold"
+    }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "language": "Language",
+    "theme": "Appearance"
+  }
+}

@@ -7,6 +7,7 @@
 // FHIR server or provider integration exists, populate them here; the shapes
 // already follow FHIR naming so the UI won't change.
 
+import type { TFunction } from "i18next";
 import type { PatientProfile } from "../contexts/AuthContext";
 import { getMedications } from "./patientPortal";
 import type { PatientMedication } from "../types/patient";
@@ -87,12 +88,12 @@ export interface HealthRecordBundle {
   medications: FhirMedicationStatement[];
 }
 
-function toMedicationStatement(m: PatientMedication): FhirMedicationStatement {
+function toMedicationStatement(m: PatientMedication, t: TFunction): FhirMedicationStatement {
   return {
     resourceType: "MedicationStatement",
     id: m.id,
     medicationCodeableConcept: { text: m.medication_name },
-    dosage: m.dosage || "Posologie non précisée",
+    dosage: m.dosage || t("patient:healthRecords.dosageNotSpecified"),
     status: m.status,
     effectivePeriod: {
       start: m.start_date || m.created_at,
@@ -102,7 +103,8 @@ function toMedicationStatement(m: PatientMedication): FhirMedicationStatement {
 }
 
 export async function getHealthRecords(
-  profile: PatientProfile | null
+  profile: PatientProfile | null,
+  t: TFunction
 ): Promise<HealthRecordBundle> {
   const fullName = (profile?.full_name || "").trim();
   const parts = fullName ? fullName.split(/\s+/) : [];
@@ -130,7 +132,7 @@ export async function getHealthRecords(
 
   // Drug history is real data — surfaced here as FHIR MedicationStatements
   const medications = await getMedications(1, 50)
-    .then((page) => page.items.map(toMedicationStatement))
+    .then((page) => page.items.map((m) => toMedicationStatement(m, t)))
     .catch(() => [] as FhirMedicationStatement[]);
 
   return {

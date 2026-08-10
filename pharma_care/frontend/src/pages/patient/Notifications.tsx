@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import NotificationCenter, {
   type NotificationsAdapter,
 } from "../../components/notifications/NotificationCenter";
@@ -16,11 +17,12 @@ const adapter: NotificationsAdapter = {
 };
 
 export default function Notifications() {
+  const { t } = useTranslation("patient");
   return (
     <NotificationCenter
-      title="Notifications"
+      title={t("patient:notifications.title")}
       adapter={adapter}
-      emptyHint="Les mises à jour de vos commandes, messages et résultats apparaîtront ici."
+      emptyHint={t("patient:notifications.emptyHint")}
     />
   );
 }

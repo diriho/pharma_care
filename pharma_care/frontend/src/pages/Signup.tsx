@@ -1,15 +1,20 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useAuth } from "../contexts/AuthContext";
 import RoleToggle, { type AccountType } from "../components/ui/RoleToggle";
+import { translateApiError } from "../i18n/apiError";
+import { ThemeToggleButton } from "../components/ui/ThemeToggle";
+import { LanguageSwitcherButton } from "../components/ui/LanguageSwitcher";
 
 type Field = {
   key: keyof FormState;
-  label: string;
+  labelKey: string;
   required?: boolean;
   type?: string;
-  placeholder?: string;
-  hint?: string;
+  placeholderKey?: string;
+  hintKey?: string;
 };
 
 type FormState = {
@@ -43,33 +48,31 @@ const INITIAL: FormState = {
 };
 
 const PHARMACY_FIELDS: Field[] = [
-  { key: "name", label: "Nom de la pharmacie", required: true, placeholder: "Pharmacie Centrale" },
-  { key: "address", label: "Adresse de l'Officine", required: true, placeholder: "Avenue, Quartier" },
-  { key: "commune", label: "Commune", required: true, placeholder: "Mukaza" },
-  { key: "province", label: "Province", required: true, placeholder: "Bujumbura Mairie" },
-  { key: "phone", label: "Téléphone", required: true, placeholder: "+257 22 ..." },
+  { key: "name", labelKey: "fields.pharmacyName", required: true, placeholderKey: "fields.pharmacyNamePlaceholder" },
+  { key: "address", labelKey: "fields.address", required: true, placeholderKey: "fields.addressPlaceholder" },
+  { key: "commune", labelKey: "fields.commune", required: true, placeholderKey: "fields.communePlaceholder" },
+  { key: "province", labelKey: "fields.province", required: true, placeholderKey: "fields.provincePlaceholder" },
+  { key: "phone", labelKey: "fields.phone", required: true, placeholderKey: "fields.phonePlaceholder" },
   {
     key: "currency",
-    label: "Devise du Système",
+    labelKey: "fields.currency",
     required: true,
-    placeholder: "FBU",
-    hint: "Par défaut: FBU (Franc burundais)",
+    placeholderKey: "fields.currencyPlaceholder",
+    hintKey: "fields.currencyHint",
   },
-  { key: "nif", label: "NIF (N° Identification Fiscale - Burundi)", placeholder: "Optionnel" },
-  { key: "rc", label: "RC (Registre du Commerce)", placeholder: "Optionnel" },
+  { key: "nif", labelKey: "fields.nif", placeholderKey: "fields.optionalPlaceholder" },
+  { key: "rc", labelKey: "fields.rc", placeholderKey: "fields.optionalPlaceholder" },
   {
     key: "expiryAlertMonths",
-    label: "Alerte Péremption Proche (Mois)",
+    labelKey: "fields.expiryAlertMonths",
     required: true,
     type: "number",
-    placeholder: "6",
   },
   {
     key: "lowStockAlertLevel",
-    label: "Seuil d'Alerte de Stock Bas Général",
+    labelKey: "fields.lowStockAlertLevel",
     required: true,
     type: "number",
-    placeholder: "15",
   },
 ];
 
@@ -95,9 +98,18 @@ const PATIENT_INITIAL: PatientFormState = {
   allergies: "",
 };
 
+const INPUT_CLASS =
+  "w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] dark:border-slate-600 bg-white dark:bg-slate-900 text-[#0f172a] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#063b1e] dark:focus:ring-[#6eff8a]";
+const LABEL_CLASS = "block text-sm font-semibold text-[#3f3f46] dark:text-slate-300 mb-1.5";
+
+function fieldLabel(t: TFunction, key: string) {
+  return t(`auth:${key}`);
+}
+
 export default function Signup() {
   const { signup, signupPatient } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation(["auth", "common"]);
   const [accountType, setAccountType] = useState<AccountType>("pharmacy");
   const [form, setForm] = useState<FormState>(INITIAL);
   const [patientForm, setPatientForm] = useState<PatientFormState>(PATIENT_INITIAL);
@@ -134,7 +146,7 @@ export default function Signup() {
       });
       navigate("/patient");
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setSubmitting(false);
     }
@@ -163,14 +175,18 @@ export default function Signup() {
       });
       navigate("/dashboard");
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="min-h-screen px-4 py-12 bg-gradient-to-br from-[#fcfcfc] to-[#e9f7ef]">
+    <div className="min-h-screen px-4 py-12 bg-gradient-to-br from-[#fcfcfc] to-[#e9f7ef] dark:from-slate-950 dark:to-slate-900">
+      <div className="fixed top-4 right-4 flex items-center gap-1">
+        <LanguageSwitcherButton />
+        <ThemeToggleButton />
+      </div>
       <div className="max-w-2xl mx-auto">
         <Link to="/" className="flex items-center gap-2 justify-center mb-8">
           <div className="h-10 w-10 rounded-xl bg-[#063b1e] flex items-center justify-center">
@@ -185,17 +201,19 @@ export default function Signup() {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
           </div>
-          <span className="text-2xl font-bold text-[#063b1e]">Pharma Core</span>
+          <span className="text-2xl font-bold text-[#063b1e] dark:text-[#6eff8a]">
+            {t("common:app.name")}
+          </span>
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-[#f0f0f0] p-8">
-          <h1 className="text-2xl font-bold text-[#063b1e] mb-1">
-            {accountType === "pharmacy" ? "Créer un compte pharmacie" : "Créer un compte patient"}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-[#f0f0f0] dark:border-slate-700 p-8">
+          <h1 className="text-2xl font-bold text-[#063b1e] dark:text-[#6eff8a] mb-1">
+            {accountType === "pharmacy" ? t("auth:signup.titlePharmacy") : t("auth:signup.titlePatient")}
           </h1>
-          <p className="text-sm text-[#71717a] mb-6">
+          <p className="text-sm text-[#71717a] dark:text-slate-400 mb-6">
             {accountType === "pharmacy"
-              ? "Renseignez les informations de votre officine pour commencer."
-              : "Créez votre espace patient pour commander vos médicaments."}
+              ? t("auth:signup.subtitlePharmacy")
+              : t("auth:signup.subtitlePatient")}
           </p>
 
           <RoleToggle
@@ -210,111 +228,101 @@ export default function Signup() {
             <form onSubmit={onSubmitPatient} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                    Email <span className="text-red-500">*</span>
+                  <label className={LABEL_CLASS}>
+                    {t("auth:signup.email")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
                     required
                     value={patientForm.email}
                     onChange={(e) => setPatient("email", e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    className={INPUT_CLASS}
                     placeholder="patient@example.bi"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                    Mot de passe <span className="text-red-500">*</span>
+                  <label className={LABEL_CLASS}>
+                    {t("auth:signup.password")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="password"
                     required
-                    minLength={6}
+                    minLength={8}
                     value={patientForm.password}
                     onChange={(e) => setPatient("password", e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
-                    placeholder="Minimum 6 caractères"
+                    className={INPUT_CLASS}
+                    placeholder={t("auth:signup.passwordPlaceholder")}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                    Nom complet <span className="text-red-500">*</span>
+                  <label className={LABEL_CLASS}>
+                    {t("auth:signup.fullName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={patientForm.fullName}
                     onChange={(e) => setPatient("fullName", e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
-                    placeholder="Jean Ndayizeye"
+                    className={INPUT_CLASS}
+                    placeholder={t("auth:signup.fullNamePlaceholder")}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                    Téléphone
-                  </label>
+                  <label className={LABEL_CLASS}>{t("auth:signup.phone")}</label>
                   <input
                     type="tel"
                     value={patientForm.phone}
                     onChange={(e) => setPatient("phone", e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    className={INPUT_CLASS}
                     placeholder="+257 79 ..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                    Date de naissance
-                  </label>
+                  <label className={LABEL_CLASS}>{t("auth:signup.dateOfBirth")}</label>
                   <input
                     type="date"
                     value={patientForm.dateOfBirth}
                     onChange={(e) => setPatient("dateOfBirth", e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                    className={INPUT_CLASS}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                    Genre
-                  </label>
+                  <label className={LABEL_CLASS}>{t("auth:signup.gender")}</label>
                   <select
                     value={patientForm.gender}
                     onChange={(e) => setPatient("gender", e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e] bg-white"
+                    className={`${INPUT_CLASS} bg-white dark:bg-slate-900`}
                   >
                     <option value="">—</option>
-                    <option value="femme">Femme</option>
-                    <option value="homme">Homme</option>
-                    <option value="autre">Autre</option>
+                    <option value="femme">{t("auth:signup.genderFemale")}</option>
+                    <option value="homme">{t("auth:signup.genderMale")}</option>
+                    <option value="autre">{t("auth:signup.genderOther")}</option>
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                    Adresse
-                  </label>
+                  <label className={LABEL_CLASS}>{t("auth:signup.address")}</label>
                   <input
                     type="text"
                     value={patientForm.address}
                     onChange={(e) => setPatient("address", e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
-                    placeholder="Avenue, Quartier"
+                    className={INPUT_CLASS}
+                    placeholder={t("auth:signup.addressPlaceholder")}
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                    Allergies connues
-                  </label>
+                  <label className={LABEL_CLASS}>{t("auth:signup.allergies")}</label>
                   <input
                     type="text"
                     value={patientForm.allergies}
                     onChange={(e) => setPatient("allergies", e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
-                    placeholder="Pénicilline, arachides… (optionnel)"
+                    className={INPUT_CLASS}
+                    placeholder={t("auth:signup.allergiesPlaceholder")}
                   />
                 </div>
               </div>
 
               {error && (
-                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                <div className="px-3 py-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
                   {error}
                 </div>
               )}
@@ -322,52 +330,52 @@ export default function Signup() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 bg-[#063b1e] text-[#6eff8a] rounded-lg font-bold hover:bg-black disabled:opacity-60 transition-colors"
+                className="w-full py-3 bg-[#063b1e] text-[#6eff8a] rounded-lg font-bold hover:bg-black dark:hover:bg-slate-950 disabled:opacity-60 transition-colors"
               >
-                {submitting ? "Création en cours…" : "Créer mon compte patient"}
+                {submitting ? t("auth:signup.submittingPatient") : t("auth:signup.submitPatient")}
               </button>
             </form>
           ) : (
           <form onSubmit={onSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                  Email <span className="text-red-500">*</span>
+                <label className={LABEL_CLASS}>
+                  {t("auth:signup.email")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
                   required
                   value={form.email}
                   onChange={(e) => set("email", e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
+                  className={INPUT_CLASS}
                   placeholder="pharmacien@example.bi"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                  Mot de passe <span className="text-red-500">*</span>
+                <label className={LABEL_CLASS}>
+                  {t("auth:signup.password")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="password"
                   required
-                  minLength={6}
+                  minLength={8}
                   value={form.password}
                   onChange={(e) => set("password", e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
-                  placeholder="Minimum 6 caractères"
+                  className={INPUT_CLASS}
+                  placeholder={t("auth:signup.passwordPlaceholder")}
                 />
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#f0f0f0]">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-[#063b1e] mt-4 mb-3">
-                Informations de l'officine
+            <div className="pt-2 border-t border-[#f0f0f0] dark:border-slate-700">
+              <h2 className="text-sm font-bold uppercase tracking-wide text-[#063b1e] dark:text-[#6eff8a] mt-4 mb-3">
+                {t("auth:signup.pharmacyInfoTitle")}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {PHARMACY_FIELDS.map((f) => (
                   <div key={f.key} className={f.key === "address" ? "md:col-span-2" : ""}>
-                    <label className="block text-sm font-semibold text-[#3f3f46] mb-1.5">
-                      {f.label}{" "}
+                    <label className={LABEL_CLASS}>
+                      {fieldLabel(t, f.labelKey)}{" "}
                       {f.required && <span className="text-red-500">*</span>}
                     </label>
                     <input
@@ -375,11 +383,13 @@ export default function Signup() {
                       required={f.required}
                       value={form[f.key]}
                       onChange={(e) => set(f.key, e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] focus:outline-none focus:ring-2 focus:ring-[#063b1e]"
-                      placeholder={f.placeholder}
+                      className={INPUT_CLASS}
+                      placeholder={f.placeholderKey ? fieldLabel(t, f.placeholderKey) : undefined}
                     />
-                    {f.hint && (
-                      <p className="text-xs text-[#71717a] mt-1">{f.hint}</p>
+                    {f.hintKey && (
+                      <p className="text-xs text-[#71717a] dark:text-slate-400 mt-1">
+                        {fieldLabel(t, f.hintKey)}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -387,7 +397,7 @@ export default function Signup() {
             </div>
 
             {error && (
-              <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="px-3 py-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
                 {error}
               </div>
             )}
@@ -395,17 +405,17 @@ export default function Signup() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 bg-[#063b1e] text-[#6eff8a] rounded-lg font-bold hover:bg-black disabled:opacity-60 transition-colors"
+              className="w-full py-3 bg-[#063b1e] text-[#6eff8a] rounded-lg font-bold hover:bg-black dark:hover:bg-slate-950 disabled:opacity-60 transition-colors"
             >
-              {submitting ? "Création en cours…" : "Créer mon compte"}
+              {submitting ? t("auth:signup.submittingPharmacy") : t("auth:signup.submitPharmacy")}
             </button>
           </form>
           )}
 
-          <p className="text-sm text-center text-[#71717a] mt-6">
-            Déjà inscrit ?{" "}
-            <Link to="/login" className="text-[#063b1e] font-semibold hover:underline">
-              Se connecter
+          <p className="text-sm text-center text-[#71717a] dark:text-slate-400 mt-6">
+            {t("auth:signup.alreadyRegistered")}{" "}
+            <Link to="/login" className="text-[#063b1e] dark:text-[#6eff8a] font-semibold hover:underline">
+              {t("auth:signup.signInLink")}
             </Link>
           </p>
         </div>

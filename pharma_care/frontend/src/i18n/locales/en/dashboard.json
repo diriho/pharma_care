@@ -1,0 +1,259 @@
+{
+  "nav": {
+    "overview": "Dashboard",
+    "pos": "Checkout (POS)",
+    "inventory": "Medication Inventory",
+    "patients": "Patients & Customers",
+    "orders": "Patient Orders",
+    "messages": "Messages",
+    "suppliers": "Suppliers",
+    "analytics": "Analytics",
+    "settings": "Profile"
+  },
+  "defaultPharmacyName": "Pharmacy Management",
+  "deleteAccount": {
+    "title": "Permanently delete your account?",
+    "message": "This will delete all your data (inventory, sales, patients, suppliers). This action is irreversible.",
+    "confirm": "Delete permanently"
+  },
+  "search": {
+    "placeholder": "Search a page…",
+    "goTo": "Go to {{page}}",
+    "noResults": "No page found",
+    "home": "Home"
+  },
+  "orders": {
+    "title": "Patient Orders",
+    "subtitle": "Orders received via the patient portal: approval, preparation, and pickup.",
+    "refresh": "Refresh",
+    "filterAll": "All",
+    "empty": "No orders received",
+    "emptyFiltered": "No \"{{status}}\" orders",
+    "emptyHint": "Orders placed by patients will appear here.",
+    "viewPrescription": "View prescription",
+    "received": "Received {{date}} — updated {{updated}}",
+    "item": "Item",
+    "prescriptionOnly": "Prescription-only order",
+    "patientNote": "Patient note: {{note}}",
+    "confirmCancel": "Cancel / reject this order?",
+    "transitions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "startPreparing": "Start preparing",
+      "cancel": "Cancel",
+      "readyForPickup": "Ready for pickup",
+      "markCompleted": "Mark completed"
+    }
+  },
+  "overview": {
+    "welcome": "Welcome, {{name}}",
+    "defaultName": "Pharmacy",
+    "subtitle": "Real-time overview of your pharmacy.",
+    "stats": {
+      "medicines": "Medications in catalog",
+      "patients": "Patients & Customers",
+      "suppliers": "Suppliers",
+      "sales": "Recorded sales",
+      "ordersTotal": "Total orders",
+      "ordersPending": "Pending orders",
+      "ordersCompleted": "Completed orders",
+      "activeConversations": "Active conversations (30d)"
+    },
+    "revenue": "Revenue",
+    "stockValuePurchase": "Stock value (purchase)",
+    "stockValueSelling": "Stock value (selling)",
+    "recentAlerts": "Recent alerts",
+    "noAlerts": "No alerts. Your stock and expirations are under control.",
+    "ratings": {
+      "title": "Pharmacy ratings",
+      "empty": "No ratings received",
+      "emptyHint": "Ratings left by your patients will appear here.",
+      "totalReviews_one": "{{count}} review total",
+      "totalReviews_other": "{{count}} reviews total",
+      "byMonth": "Average rating by month"
+    },
+    "recentReviews": {
+      "title": "Recent reviews",
+      "empty": "No reviews yet",
+      "emptyHint": "Comments from your patients will appear here."
+    }
+  },
+  "pos": {
+    "title": "Point of Sale",
+    "subtitle": "Record sales in just a few clicks. Stock updates automatically.",
+    "searchPlaceholder": "Search a medication…",
+    "noResults": "No medication in stock for this search.",
+    "cart": "Cart ({{count}})",
+    "cartEmpty": "No items.",
+    "patientOptional": "Patient (optional)",
+    "walkInCustomer": "Walk-in customer",
+    "payment": "Payment",
+    "paymentMethods": {
+      "cash": "Cash",
+      "mobile": "Mobile Money",
+      "card": "Card",
+      "insurance": "Insurance"
+    },
+    "checkout": "Confirm sale",
+    "saleConfirmed": "Sale recorded — {{amount}}",
+    "stock": "Stock: {{count}}"
+  },
+  "inventory": {
+    "title": "Medication Inventory",
+    "subtitle": "Track stock, batches, expirations, and pricing.",
+    "addMedicine": "Add a medication",
+    "searchPlaceholder": "Search (name, molecule, category, batch)…",
+    "empty": "No medications. Start by adding one.",
+    "columns": {
+      "medicine": "Medication",
+      "category": "Category",
+      "stock": "Stock",
+      "purchasePrice": "Cost",
+      "sellingPrice": "Price",
+      "expiry": "Expiry"
+    },
+    "modal": {
+      "editTitle": "Edit medication",
+      "addTitle": "Add a medication",
+      "fields": {
+        "name": "Name",
+        "category": "Category",
+        "dosage": "Dosage",
+        "molecule": "Molecule",
+        "initialStock": "Initial stock",
+        "lowStockThreshold": "Low-stock threshold",
+        "purchasePrice": "Purchase price",
+        "sellingPrice": "Selling price",
+        "batchNumber": "Batch number",
+        "expiryDate": "Expiry date",
+        "shelfLocation": "Shelf location",
+        "supplier": "Supplier",
+        "description": "Description"
+      }
+    },
+    "confirmDelete": "Delete this medication?"
+  },
+  "patients": {
+    "title": "Patients & Customers",
+    "subtitle": "Patient database with contact info and clinical notes.",
+    "addPatient": "Add a patient",
+    "empty": "No patients registered.",
+    "columns": {
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "dateOfBirth": "Date of birth",
+      "allergies": "Allergies"
+    },
+    "modal": {
+      "editTitle": "Edit patient",
+      "addTitle": "Add a patient",
+      "fields": {
+        "fullName": "Full name",
+        "phone": "Phone",
+        "email": "Email",
+        "dateOfBirth": "Date of birth",
+        "gender": "Gender",
+        "address": "Address",
+        "allergies": "Allergies",
+        "notes": "Notes"
+      },
+      "genderOptions": {
+        "female": "Female",
+        "male": "Male",
+        "other": "Other"
+      }
+    },
+    "confirmDelete": "Delete this patient?"
+  },
+  "suppliers": {
+    "title": "Suppliers & Restocking",
+    "subtitle": "Manage your partners and place restock orders.",
+    "addSupplier": "Add a supplier",
+    "suppliersSection": "Suppliers",
+    "noSuppliers": "No suppliers.",
+    "newOrder": "New order",
+    "unknownSupplier": "Unknown supplier",
+    "restockOrders": "Restock orders",
+    "noOrders": "No orders recorded.",
+    "orderSummary_one": "{{count}} line · created on {{date}}",
+    "orderSummary_other": "{{count}} lines · created on {{date}}",
+    "received": "Received",
+    "markReceived": "Mark received",
+    "confirmDeleteSupplier": "Delete this supplier?",
+    "confirmReceive": "Mark this order as received? Stock will be increased.",
+    "modal": {
+      "editTitle": "Edit supplier",
+      "addTitle": "Add a supplier",
+      "fields": {
+        "name": "Name",
+        "contact": "Contact",
+        "phone": "Phone",
+        "email": "Email",
+        "address": "Address",
+        "categories": "Categories (comma-separated)"
+      }
+    },
+    "orderModal": {
+      "title": "New order",
+      "hint": "Select the medications and quantities. Stock will be increased upon receipt.",
+      "addMedicine": "Add a medication…",
+      "createOrder": "Create order"
+    }
+  },
+  "analytics": {
+    "title": "Analytics & Reports",
+    "subtitle": "Key indicators and business trends for your pharmacy.",
+    "loadError": "Error loading analytics: {{message}}",
+    "dataUnavailable": "data unavailable",
+    "kpi": {
+      "totalRevenue": "Total revenue",
+      "stockValuePurchase": "Stock value (purchase)",
+      "stockValueSelling": "Stock value (selling)",
+      "totalSales": "Total sales"
+    },
+    "salesByDay": {
+      "title": "Sales by day",
+      "empty": "No sales recorded."
+    },
+    "topMedicines": {
+      "title": "Best-selling medications",
+      "empty": "No data yet."
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitle": "Securely respond to your patients' questions.",
+    "empty": "No conversations",
+    "emptyHint": "Conversations started by your patients will appear here."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "emptyHint": "New orders, ratings, and messages from your patients will appear here.",
+    "alerts": {
+      "title": "Stock & expiry alerts",
+      "empty": "No alerts. Your stock and expirations are under control."
+    }
+  },
+  "charts": {
+    "ratingTrend": {
+      "ariaLabel": "Average rating trend by month",
+      "reviewCount_one": "({{count}} review)",
+      "reviewCount_other": "({{count}} reviews)"
+    },
+    "weeklyVolume": {
+      "title": "Weekly Patient Volume",
+      "subtitle": "Patients served over the last 7 days",
+      "totalBadge_one": "{{count}} patient",
+      "totalBadge_other": "{{count}} patients",
+      "loadingAria": "Loading patient volume",
+      "emptyTitle": "No data this week",
+      "emptyHint": "Patient volume will appear here once the first visits are recorded.",
+      "tooltipPatients_one": "{{count}} patient",
+      "tooltipPatients_other": "{{count}} patients",
+      "tableCaption": "Patient volume per day over the last 7 days",
+      "tableDay": "Day",
+      "tablePatients": "Patients"
+    }
+  }
+}

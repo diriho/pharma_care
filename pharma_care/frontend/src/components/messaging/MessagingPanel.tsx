@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageSquare, Send, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import ErrorBanner from "../ui/ErrorBanner";
 import EmptyState from "../ui/EmptyState";
 import ConfirmDialog from "../ui/ConfirmDialog";
@@ -7,6 +8,7 @@ import { SkeletonLines } from "../ui/Skeleton";
 import { useRealtimeTable } from "../../hooks/useRealtimeTable";
 import type { Conversation, Message } from "../../types/patient";
 import { formatDate } from "../../lib/format";
+import { translateApiError } from "../../i18n/apiError";
 
 // Backend adapter so the same panel serves the patient portal (/patient/…)
 // and the pharmacy dashboard (/data/…) without duplicating UI or state logic.
@@ -31,6 +33,7 @@ export default function MessagingPanel({
   emptyHint: string;
   initialConversationId?: string;
 }) {
+  const { t } = useTranslation("common");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -52,12 +55,12 @@ export default function MessagingPanel({
       setError(null);
       return list;
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
       return [];
     } finally {
       setLoading(false);
     }
-  }, [adapter]);
+  }, [adapter, t]);
 
   const openConversation = useCallback(
     async (convo: Conversation) => {
@@ -70,12 +73,12 @@ export default function MessagingPanel({
           list.map((c) => (c.id === convo.id ? { ...c, unread: 0 } : c))
         );
       } catch (err) {
-        setError((err as Error).message);
+        setError(translateApiError(err, t));
       } finally {
         setThreadLoading(false);
       }
     },
-    [adapter]
+    [adapter, t]
   );
 
   useEffect(() => {
@@ -131,7 +134,7 @@ export default function MessagingPanel({
       setMessages((m) => [...m, sent]);
       setDraft("");
     } catch (err) {
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     } finally {
       setSending(false);
     }
@@ -147,7 +150,7 @@ export default function MessagingPanel({
       loadConversations(); // the list preview may have shown this message
     } catch (err) {
       setConfirmTarget(null);
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     } finally {
       setDeletingId(null);
     }
@@ -159,7 +162,7 @@ export default function MessagingPanel({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
         {/* Conversation list */}
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col md:max-h-[70vh]">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col md:max-h-[70vh]">
           {loading ? (
             <SkeletonLines lines={4} />
           ) : conversations.length === 0 ? (
@@ -169,17 +172,17 @@ export default function MessagingPanel({
               hint={emptyHint}
             />
           ) : (
-            <ul className="divide-y divide-slate-100 overflow-y-auto">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700 overflow-y-auto">
               {conversations.map((c) => (
                 <li key={c.id}>
                   <button
                     onClick={() => openConversation(c)}
-                    className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors ${
-                      selected?.id === c.id ? "bg-emerald-50/60" : ""
+                    className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors ${
+                      selected?.id === c.id ? "bg-emerald-50/60 dark:bg-emerald-950/30" : ""
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-900 truncate">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                         {c.counterpart_name}
                       </p>
                       {c.unread > 0 && (
@@ -188,8 +191,8 @@ export default function MessagingPanel({
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 truncate mt-0.5">
-                      {c.last_message?.body || c.subject || "Nouvelle conversation"}
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      {c.last_message?.body || c.subject || t("messaging.newConversation")}
                     </p>
                   </button>
                 </li>
@@ -199,26 +202,26 @@ export default function MessagingPanel({
         </div>
 
         {/* Thread */}
-        <div className="md:col-span-2 bg-white rounded-2xl border border-slate-200 flex flex-col md:max-h-[70vh]">
+        <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:max-h-[70vh]">
           {!selected ? (
             <EmptyState
               icon={<MessageSquare className="h-6 w-6" />}
-              title="Sélectionnez une conversation"
-              hint="Choisissez un fil de discussion pour afficher les messages."
+              title={t("messaging.selectConversation")}
+              hint={t("messaging.selectConversationHint")}
             />
           ) : (
             <>
-              <div className="px-5 py-3 border-b border-slate-100">
-                <p className="font-bold text-slate-900">{selected.counterpart_name}</p>
+              <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700">
+                <p className="font-bold text-slate-900 dark:text-slate-100">{selected.counterpart_name}</p>
                 {/* Typing indicator placeholder — needs presence broadcasts */}
-                <p className="text-xs text-slate-400 italic h-4"></p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 italic h-4"></p>
               </div>
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
                 {threadLoading ? (
                   <SkeletonLines lines={4} />
                 ) : messages.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-6">
-                    Démarrez la conversation en envoyant un message.
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
+                    {t("messaging.startConversation")}
                   </p>
                 ) : (
                   messages.map((m) => {
@@ -235,8 +238,8 @@ export default function MessagingPanel({
                           <button
                             onClick={() => setConfirmTarget(m)}
                             disabled={deletingId === m.id}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity disabled:opacity-50"
-                            aria-label="Supprimer ce message"
+                            className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity disabled:opacity-50"
+                            aria-label={t("messaging.deleteMessage")}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -245,13 +248,13 @@ export default function MessagingPanel({
                           className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
                             mine
                               ? "bg-[#063b1e] text-white rounded-br-md"
-                              : "bg-slate-100 text-slate-800 rounded-bl-md"
+                              : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-bl-md"
                           } ${deletingId === m.id ? "opacity-50" : ""}`}
                         >
                           <p className="whitespace-pre-wrap break-words">{m.body}</p>
                           <p
                             className={`text-[10px] mt-1 ${
-                              mine ? "text-emerald-200/70" : "text-slate-400"
+                              mine ? "text-emerald-200/70" : "text-slate-400 dark:text-slate-500"
                             }`}
                           >
                             {formatDate(m.created_at)}
@@ -265,20 +268,20 @@ export default function MessagingPanel({
               </div>
               <form
                 onSubmit={handleSend}
-                className="p-3 border-t border-slate-100 flex items-center gap-2"
+                className="p-3 border-t border-slate-100 dark:border-slate-700 flex items-center gap-2"
               >
                 <input
                   type="text"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Écrire un message…"
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#063b1e] text-sm"
+                  placeholder={t("messaging.placeholder")}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#063b1e] dark:focus:ring-[#6eff8a] text-sm"
                 />
                 <button
                   type="submit"
                   disabled={sending || !draft.trim()}
                   className="p-2.5 rounded-xl bg-[#063b1e] text-[#6eff8a] hover:bg-black disabled:opacity-50 transition-colors"
-                  aria-label="Envoyer"
+                  aria-label={t("messaging.send")}
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -290,8 +293,8 @@ export default function MessagingPanel({
 
       <ConfirmDialog
         open={Boolean(confirmTarget)}
-        title="Supprimer ce message ?"
-        message="Le message sera supprimé pour tous les participants de la conversation. Cette action est irréversible."
+        title={t("messaging.deleteTitle")}
+        message={t("messaging.deleteMessageConfirm")}
         busy={Boolean(confirmTarget && deletingId === confirmTarget.id)}
         onConfirm={() => confirmTarget && handleDelete(confirmTarget)}
         onCancel={() => setConfirmTarget(null)}

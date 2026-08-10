@@ -1,21 +1,14 @@
+import type { TFunction } from "i18next";
 import type { OperatingHours } from "../types/patient";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-const DAY_LABELS_FR: Record<string, string> = {
-  mon: "Lun",
-  tue: "Mar",
-  wed: "Mer",
-  thu: "Jeu",
-  fri: "Ven",
-  sat: "Sam",
-  sun: "Dim",
-};
+const WEEK_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
-// Today's schedule as displayable text ("08:00-20:00" or "Fermé")
-export function todayHours(hours: OperatingHours | null): string {
-  if (!hours) return "Horaires non renseignés";
+// Today's schedule as displayable text ("08:00-20:00" or a translated closed/unset label)
+export function todayHours(hours: OperatingHours | null, t: TFunction): string {
+  if (!hours) return t("patient:hours.notConfigured");
   const raw = hours[DAY_KEYS[new Date().getDay()]];
-  if (!raw || raw.toLowerCase() === "closed") return "Fermé aujourd'hui";
+  if (!raw || raw.toLowerCase() === "closed") return t("patient:hours.closedToday");
   return raw;
 }
 
@@ -34,12 +27,11 @@ export function isOpenNow(hours: OperatingHours | null): boolean | null {
   return minutes >= open && minutes < close;
 }
 
-// Full week for detail views: [["Lun", "08:00-20:00"], …]
-export function weekSchedule(hours: OperatingHours | null): [string, string][] {
+// Full week for detail views: [["Mon", "08:00-20:00"], …]
+export function weekSchedule(hours: OperatingHours | null, t: TFunction): [string, string][] {
   if (!hours) return [];
-  const ordered = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-  return ordered.map((k) => [
-    DAY_LABELS_FR[k],
-    !hours[k] || hours[k].toLowerCase() === "closed" ? "Fermé" : hours[k],
+  return WEEK_ORDER.map((k) => [
+    t(`patient:hours.days.${k}`),
+    !hours[k] || hours[k].toLowerCase() === "closed" ? t("patient:hours.closed") : hours[k],
   ]);
 }

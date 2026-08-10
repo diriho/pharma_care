@@ -1,0 +1,155 @@
+{
+  "app": {
+    "name": "Pharma Core",
+    "tagline": "Pharmacy Management"
+  },
+  "nav": {
+    "settings": "Settings",
+    "logout": "Log out",
+    "export": "Export data",
+    "deleteAccount": "Delete account",
+    "notifications": "Notifications",
+    "search": "Search"
+  },
+  "buttons": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "retry": "Retry",
+    "viewAll": "View all",
+    "markAllRead": "Mark all as read",
+    "loadMore": "Load more"
+  },
+  "common": {
+    "loading": "Loading…",
+    "yes": "Yes",
+    "no": "No",
+    "none": "None",
+    "optional": "optional",
+    "required": "required",
+    "today": "Today",
+    "search": "Search",
+    "status": "Status",
+    "date": "Date",
+    "actions": "Actions",
+    "total": "Total",
+    "quantity": "Quantity",
+    "unknown": "Unknown"
+  },
+  "empty": {
+    "title": "Nothing here yet",
+    "description": "There's nothing to show right now."
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Couldn't reach the server. Check your connection and try again.",
+    "loadFailed": "Failed to load data.",
+    "TOO_MANY_ATTEMPTS": "Too many attempts. Please try again later.",
+    "SERVER_ERROR": "Something went wrong. Please try again.",
+    "VALIDATION_ERROR": "Please check the highlighted fields.",
+    "MISSING_CREDENTIALS": "Email and password are required.",
+    "WEAK_PASSWORD": "Password is too short (minimum 8 characters).",
+    "EMAIL_IN_USE": "An account with this email already exists.",
+    "SIGNUP_FAILED": "Couldn't create your account. Please try again.",
+    "INVALID_CREDENTIALS": "Incorrect email or password.",
+    "nameRequired": "Full name is required.",
+    "invalidStatus": "Invalid status.",
+    "notFound": "Not found.",
+    "ROLE_MISMATCH_PATIENT": "This account is a patient account. Select \"Patient\" to sign in.",
+    "ROLE_MISMATCH_PHARMACY": "This account is a pharmacy account. Select \"Pharmacy\" to sign in.",
+    "DOWNLOAD_FAILED": "Download failed. Please try again."
+  },
+  "confirm": {
+    "areYouSure": "Are you sure?",
+    "cannotBeUndone": "This action cannot be undone."
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "orderStatus": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "preparing": "Preparing",
+    "ready_for_pickup": "Ready for pickup",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "header": {
+    "services": "Services",
+    "features": "Features",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "login": "Sign in",
+    "signup": "Sign up"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "confirmDialog": {
+    "deleting": "Deleting…"
+  },
+  "messaging": {
+    "newConversation": "New conversation",
+    "selectConversation": "Select a conversation",
+    "selectConversationHint": "Choose a thread to view its messages.",
+    "startConversation": "Start the conversation by sending a message.",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "deleteMessage": "Delete this message",
+    "deleteTitle": "Delete this message?",
+    "deleteMessageConfirm": "This message will be deleted for all participants in the conversation. This action cannot be undone."
+  },
+  "errorBanner": {
+    "prefix": "Error loading: {{message}}"
+  },
+  "loadingLabel": "Loading",
+  "starRating": {
+    "starLabel_one": "{{count}} star",
+    "starLabel_other": "{{count}} stars"
+  },
+  "home": {
+    "badge": "Smart management for Burundian pharmacies",
+    "heroTitle1": "Your pharmacy,",
+    "heroTitle2": "perfectly organized.",
+    "heroSubtitle": "Pharma Core centralizes your inventory, sales, patients, and suppliers in one secure platform. Real-time tracking, smart alerts, and detailed analytics — built for Burundian pharmacies.",
+    "ctaStart": "Start for free",
+    "ctaSeeServices": "See services",
+    "servicesTitle": "Everything your pharmacy needs",
+    "servicesSubtitle": "A complete suite of tools built for pharmacists — simple, fast, and reliable.",
+    "service": {
+      "posTitle": "Point of Sale (POS)",
+      "posDesc": "Fast checkout with real-time stock lookup, automatic FBU calculation, and detailed sales receipts.",
+      "inventoryTitle": "Medication Inventory",
+      "inventoryDesc": "Manage your catalog and track batches, expiry dates, and stock levels precisely.",
+      "patientsTitle": "Patients & Customers",
+      "patientsDesc": "Secure patient database with purchase history, allergies, and clinical notes.",
+      "suppliersTitle": "Suppliers & Restocking",
+      "suppliersDesc": "Manage suppliers and create restock orders that update stock automatically.",
+      "analyticsTitle": "Analytics & Reports",
+      "analyticsDesc": "Dashboards with revenue, best-selling medications, and stock valuation.",
+      "alertsTitle": "Smart Alerts",
+      "alertsDesc": "Automatic notifications for low stock and upcoming expirations — configurable per pharmacy."
+    },
+    "feature": {
+      "isolationTitle": "Data isolated per pharmacy",
+      "isolationDesc": "Each pharmacy only accesses its own data, protected by authentication and strict security policies (Row-Level Security).",
+      "exportTitle": "Full JSON export",
+      "exportDesc": "Download your pharmacy's complete history at any time for archiving, auditing, or migration.",
+      "alertsTitle": "Real-time alerts",
+      "alertsDesc": "Low stock or medications nearing expiry? Pharma Core alerts you at the right time."
+    },
+    "ctaTitle1": "Ready to modernize",
+    "ctaTitle2": "your pharmacy?",
+    "ctaSubtitle": "Create your free account and start managing your pharmacy in minutes.",
+    "ctaButton": "Create my account"
+  }
+}

@@ -12,27 +12,31 @@ import {
   UserRound,
   LogOut,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
 import { getNotifications } from "../../services/patientPortal";
 import { useRealtimeTable } from "../../hooks/useRealtimeTable";
 import type { PatientNotification } from "../../types/patient";
+import { ThemeToggleButton } from "../../components/ui/ThemeToggle";
+import { LanguageSwitcherButton } from "../../components/ui/LanguageSwitcher";
 
-// patient portal navigation
+// patient portal navigation — labelKey resolves in the "patient" i18n namespace
 const NAV = [
-  { to: "/patient/dashboard", label: "Tableau de Bord", icon: LayoutDashboard },
-  { to: "/patient/pharmacies", label: "Pharmacies à Proximité", icon: MapPin },
-  { to: "/patient/find-medication", label: "Trouver un Médicament", icon: Search },
-  { to: "/patient/orders", label: "Mes Commandes", icon: ShoppingBag },
-  { to: "/patient/messages", label: "Messages", icon: MessageSquare },
-  { to: "/patient/history", label: "Historique Médical", icon: ClipboardList },
-  { to: "/patient/health-records", label: "Dossier de Santé", icon: FolderHeart },
-  { to: "/patient/profile", label: "Profil", icon: UserRound },
+  { to: "/patient/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { to: "/patient/pharmacies", labelKey: "nav.pharmacies", icon: MapPin },
+  { to: "/patient/find-medication", labelKey: "nav.findMedication", icon: Search },
+  { to: "/patient/orders", labelKey: "nav.orders", icon: ShoppingBag },
+  { to: "/patient/messages", labelKey: "nav.messages", icon: MessageSquare },
+  { to: "/patient/history", labelKey: "nav.history", icon: ClipboardList },
+  { to: "/patient/health-records", labelKey: "nav.healthRecords", icon: FolderHeart },
+  { to: "/patient/profile", labelKey: "nav.profile", icon: UserRound },
 ];
 
 // patient portal shell: sidebar (desktop), top nav (mobile), notification bell
 export default function PatientLayout() {
   const { patientProfile, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation(["patient", "common"]);
   const [unread, setUnread] = useState(0);
 
   const refreshUnread = useCallback(async () => {
@@ -63,7 +67,7 @@ export default function PatientLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans">
       <aside className="hidden md:flex md:flex-col md:w-64 bg-slate-900 text-slate-300 shrink-0">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-800 bg-slate-950">
           <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center">
@@ -80,9 +84,9 @@ export default function PatientLayout() {
           </div>
           <div>
             <Link to="/">
-              <h1 className="text-lg font-bold text-white tracking-tight">Pharma Core</h1>
+              <h1 className="text-lg font-bold text-white tracking-tight">{t("common:app.name")}</h1>
             </Link>
-            <p className="text-xs text-emerald-400 font-medium">Espace Patient</p>
+            <p className="text-xs text-emerald-400 font-medium">{t("patient:patientSpace")}</p>
           </div>
         </div>
 
@@ -102,7 +106,7 @@ export default function PatientLayout() {
                 }
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                {t(`patient:${item.labelKey}`)}
               </NavLink>
             );
           })}
@@ -114,30 +118,34 @@ export default function PatientLayout() {
             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            Déconnexion
+            {t("common:nav.logout")}
           </button>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between gap-3">
+        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">
-              {patientProfile?.full_name || "Patient"}
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+              {patientProfile?.full_name || t("patient:defaultName")}
             </p>
-            <p className="text-xs text-slate-500 hidden sm:block">Espace Patient</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
+              {t("patient:patientSpace")}
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <LanguageSwitcherButton />
+            <ThemeToggleButton />
             <NavLink
               to="/patient/notifications"
               className={({ isActive }) =>
                 `relative p-2 rounded-lg transition-colors ${
-                  isActive ? "bg-emerald-50" : "hover:bg-slate-100"
+                  isActive ? "bg-emerald-50 dark:bg-emerald-950/40" : "hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`
               }
-              aria-label="Notifications"
+              aria-label={t("common:nav.notifications")}
             >
-              <Bell className="h-5 w-5 text-slate-700" />
+              <Bell className="h-5 w-5 text-slate-700 dark:text-slate-300" />
               {unread > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">
                   {unread}
@@ -146,10 +154,10 @@ export default function PatientLayout() {
             </NavLink>
             <button
               onClick={handleLogout}
-              className="md:hidden p-2 rounded-lg hover:bg-slate-100"
-              aria-label="Déconnexion"
+              className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label={t("common:nav.logout")}
             >
-              <LogOut className="h-5 w-5 text-slate-700" />
+              <LogOut className="h-5 w-5 text-slate-700 dark:text-slate-300" />
             </button>
           </div>
         </header>
@@ -171,7 +179,7 @@ export default function PatientLayout() {
                 }
               >
                 <Icon className="h-3.5 w-3.5" />
-                {item.label}
+                {t(`patient:${item.labelKey}`)}
               </NavLink>
             );
           })}

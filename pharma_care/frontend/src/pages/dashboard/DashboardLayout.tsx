@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Download, LogOut, Trash2, Bell } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
 import { api, apiDownload } from "../../api/client";
+import { translateApiError } from "../../i18n/apiError";
 import Search from "./Search";
 import { DASHBOARD_NAV } from "./nav";
 import { getInboxNotifications } from "../../services/pharmacyAdmin";
 import { useRealtimeTable } from "../../hooks/useRealtimeTable";
 import type { PatientNotification } from "../../types/patient";
+import { ThemeToggleButton } from "../../components/ui/ThemeToggle";
+import { LanguageSwitcherButton } from "../../components/ui/LanguageSwitcher";
 
 type Alert = { type: string; severity: string; message: string };
 
@@ -16,6 +20,7 @@ type Alert = { type: string; severity: string; message: string };
 export default function DashboardLayout() {
   const { pharmacy, logout, deleteAccount } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation(["dashboard", "common"]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [unreadInbox, setUnreadInbox] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -76,7 +81,7 @@ export default function DashboardLayout() {
       await deleteAccount();
       navigate("/");
     } catch (err) {
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     }
   }
 
@@ -88,13 +93,13 @@ export default function DashboardLayout() {
         `pharma-core-${(pharmacy?.name || "pharmacie").replace(/\s+/g, "-").toLowerCase()}.json`
       );
     } catch (err) {
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     }
   }
 
   // DOM element to return
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans">
       <aside className="hidden md:flex md:flex-col md:w-64 bg-slate-900 text-slate-300 shrink-0">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-800 bg-slate-950">
           <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center">
@@ -112,10 +117,10 @@ export default function DashboardLayout() {
           </div>
           <div>
             <Link to="/">
-              <h1 className="text-lg font-bold text-white tracking-tight">Pharma Core</h1>
+              <h1 className="text-lg font-bold text-white tracking-tight">{t("common:app.name")}</h1>
             </Link>
             <p className="text-xs text-emerald-400 font-medium">
-              {pharmacy?.name || "Gestion Pharmacie"}
+              {pharmacy?.name || t("dashboard:defaultPharmacyName")}
             </p>
           </div>
         </div>
@@ -137,7 +142,7 @@ export default function DashboardLayout() {
                 }
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                {t(`dashboard:${item.labelKey}`)}
               </NavLink>
             );
           })}
@@ -149,46 +154,50 @@ export default function DashboardLayout() {
             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
           >
             <Download className="h-4 w-4" />
-            Exporter (JSON)
+            {t("common:nav.export")}
           </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            Déconnexion
+            {t("common:nav.logout")}
           </button>
           <button
             onClick={() => setConfirmDelete(true)}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-red-300 hover:bg-red-900/40 transition-colors"
           >
             <Trash2 className="h-4 w-4" />
-            Supprimer le compte
+            {t("common:nav.deleteAccount")}
           </button>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Search />
           </div>
-          <NavLink
-            to="/dashboard/notifications"
-            className={({ isActive }) =>
-              `relative p-2 rounded-lg transition-colors ${
-                isActive ? "bg-emerald-50" : "hover:bg-slate-100"
-              }`
-            }
-            aria-label="Notifications"
-          >
-            <Bell className="h-5 w-5 text-slate-700" />
-            {bellCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">
-                {bellCount}
-              </span>
-            )}
-          </NavLink>
+          <div className="flex items-center gap-1">
+            <LanguageSwitcherButton />
+            <ThemeToggleButton />
+            <NavLink
+              to="/dashboard/notifications"
+              className={({ isActive }) =>
+                `relative p-2 rounded-lg transition-colors ${
+                  isActive ? "bg-emerald-50 dark:bg-emerald-950/40" : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`
+              }
+              aria-label={t("common:nav.notifications")}
+            >
+              <Bell className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+              {bellCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">
+                  {bellCount}
+                </span>
+              )}
+            </NavLink>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
@@ -198,26 +207,25 @@ export default function DashboardLayout() {
 
       {confirmDelete && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-slate-900 mb-2">
-              Supprimer définitivement votre compte ?
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+              {t("dashboard:deleteAccount.title")}
             </h3>
-            <p className="text-sm text-slate-600 mb-6">
-              Cette action supprimera toutes vos données (inventaire, ventes,
-              patients, fournisseurs). Cette opération est irréversible.
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+              {t("dashboard:deleteAccount.message")}
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="px-4 py-2 rounded-lg border border-slate-200 font-semibold hover:bg-slate-50"
+                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t("common:buttons.cancel")}
               </button>
               <button
                 onClick={handleDelete}
                 className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700"
               >
-                Supprimer définitivement
+                {t("dashboard:deleteAccount.confirm")}
               </button>
             </div>
           </div>

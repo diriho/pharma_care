@@ -3,6 +3,18 @@ import { supabase } from "../lib/supabase";
 // base api path
 const BASE = import.meta.env.VITE_API_BASE || "/api";
 
+// Backend error responses may include a stable `code` (see backend/supabase/auth/routes.ts's
+// authError helper) so the frontend can show a translated, enumeration-safe message
+// instead of raw server text. See src/i18n/apiError.ts for the code -> translation mapping.
+export class ApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+  }
+}
+
 // Compute Supabase session storage key dynamically from configured URL
 function getSupabaseSessionKey(): string {
   const url = import.meta.env.VITE_SUPABASE_URL;
@@ -94,7 +106,11 @@ export async function api<T = unknown>(
       const message =
         (body && typeof body === "object" && "error" in body && (body as { error?: string }).error) ||
         `Request failed (${res.status})`;
-      throw new Error(message as string);
+      const code =
+        body && typeof body === "object" && "code" in body
+          ? (body as { code?: string }).code
+          : undefined;
+      throw new ApiError(message as string, code);
     }
     return body as T;
   } finally {
@@ -110,7 +126,7 @@ export async function apiDownload(path: string, filename: string): Promise<void>
     if (res.status === 401 && headers.Authorization) {
       await supabase.auth.signOut().catch(() => {});
     }
-    throw new Error(`Téléchargement échoué (${res.status})`);
+    throw new ApiError(`Téléchargement échoué (${res.status})`, "DOWNLOAD_FAILED");
   }
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);

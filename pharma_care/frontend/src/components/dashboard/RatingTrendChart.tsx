@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   CartesianGrid,
   Line,
@@ -7,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useTheme } from "../../contexts/ThemeContext";
 
 export type MonthlyRating = { month: string; average: number; count: number };
 
@@ -25,18 +27,19 @@ type TrendTooltipProps = {
 };
 
 function TrendTooltip({ active, payload }: TrendTooltipProps) {
+  const { t } = useTranslation("dashboard");
   const point = payload?.[0]?.payload;
   if (!active || !point) return null;
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg px-3 py-2">
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
         {formatMonth(point.month)}
       </p>
-      <p className="text-sm font-bold text-slate-900">
+      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
         {point.average.toFixed(1)} / 5
-        <span className="font-normal text-slate-500">
+        <span className="font-normal text-slate-500 dark:text-slate-400">
           {" "}
-          ({point.count} avis)
+          {t("charts.ratingTrend.reviewCount", { count: point.count })}
         </span>
       </p>
     </div>
@@ -45,16 +48,23 @@ function TrendTooltip({ active, payload }: TrendTooltipProps) {
 
 // Monthly average rating trend (0–5), single series — no legend needed.
 export default function RatingTrendChart({ data }: { data: MonthlyRating[] }) {
+  const { t } = useTranslation("dashboard");
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const gridColor = isDark ? "#334155" : "#e2e8f0";
+  const tickColor = isDark ? "#94a3b8" : "#64748b";
+  const cursorColor = isDark ? "#475569" : "#cbd5e1";
+
   return (
-    <div className="h-40" aria-label="Évolution de la note moyenne par mois">
+    <div className="h-40" aria-label={t("charts.ratingTrend.ariaLabel")}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -28 }}>
-          <CartesianGrid vertical={false} stroke="#e2e8f0" />
+          <CartesianGrid vertical={false} stroke={gridColor} />
           <XAxis
             dataKey="month"
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "#64748b", fontSize: 12 }}
+            tick={{ fill: tickColor, fontSize: 12 }}
             tickFormatter={formatMonth}
           />
           <YAxis
@@ -62,9 +72,9 @@ export default function RatingTrendChart({ data }: { data: MonthlyRating[] }) {
             ticks={[0, 1, 2, 3, 4, 5]}
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "#64748b", fontSize: 12 }}
+            tick={{ fill: tickColor, fontSize: 12 }}
           />
-          <Tooltip content={<TrendTooltip />} cursor={{ stroke: "#cbd5e1" }} />
+          <Tooltip content={<TrendTooltip />} cursor={{ stroke: cursorColor }} />
           <Line
             type="monotone"
             dataKey="average"

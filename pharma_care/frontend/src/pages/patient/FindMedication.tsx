@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, MapPin, Search, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "../../components/PageHeader";
 import ErrorBanner from "../../components/ui/ErrorBanner";
 import EmptyState from "../../components/ui/EmptyState";
@@ -8,9 +9,11 @@ import { SkeletonLines } from "../../components/ui/Skeleton";
 import { searchMedicines } from "../../services/patientPortal";
 import type { MedicineSearchResult } from "../../types/patient";
 import { formatCurrency } from "../../lib/format";
+import { translateApiError } from "../../i18n/apiError";
 
 export default function FindMedication() {
   const navigate = useNavigate();
+  const { t } = useTranslation(["patient", "common"]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MedicineSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,7 +38,7 @@ export default function FindMedication() {
         setResults(await searchMedicines(q));
         setSearched(true);
       } catch (err) {
-        setError((err as Error).message);
+        setError(translateApiError(err, t));
       } finally {
         setLoading(false);
       }
@@ -43,85 +46,86 @@ export default function FindMedication() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   return (
     <div>
       <PageHeader
-        title="Trouver un Médicament"
-        subtitle="Recherchez un médicament et voyez sa disponibilité dans les pharmacies proches."
+        title={t("patient:findMedication.title")}
+        subtitle={t("patient:findMedication.subtitle")}
       />
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6">
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 focus-within:ring-2 focus-within:ring-[#063b1e] focus-within:border-transparent">
-          <Search className="h-5 w-5 text-slate-400 shrink-0" />
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-3 focus-within:ring-2 focus-within:ring-[#063b1e] dark:focus-within:ring-[#6eff8a] focus-within:border-transparent">
+          <Search className="h-5 w-5 text-slate-400 dark:text-slate-500 shrink-0" />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ex. : Paracétamol, Amoxicilline…"
-            className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-            aria-label="Rechercher un médicament"
+            placeholder={t("patient:findMedication.searchPlaceholder")}
+            className="w-full bg-transparent text-sm text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            aria-label={t("patient:findMedication.searchAriaLabel")}
           />
         </div>
-        <p className="text-xs text-slate-400 mt-2">
-          La recherche accepte les correspondances partielles (nom ou molécule).
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+          {t("patient:findMedication.searchHint")}
         </p>
       </div>
 
       {error && <ErrorBanner message={error} />}
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
           <SkeletonLines lines={5} />
         </div>
       ) : !searched ? (
-        <div className="bg-white rounded-2xl border border-slate-200">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
           <EmptyState
             icon={<Search className="h-6 w-6" />}
-            title="Recherchez un médicament"
-            hint="Saisissez au moins 2 caractères pour lancer la recherche."
+            title={t("patient:findMedication.promptTitle")}
+            hint={t("patient:findMedication.promptHint")}
           />
         </div>
       ) : results.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
           <EmptyState
             icon={<XCircle className="h-6 w-6" />}
-            title={`Aucun résultat pour « ${query.trim()} »`}
-            hint="Vérifiez l'orthographe ou essayez le nom de la molécule."
+            title={t("patient:findMedication.noResultsTitle", { query: query.trim() })}
+            hint={t("patient:findMedication.noResultsHint")}
           />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
           {results.map((r) => (
             <div
               key={r.id}
               className="p-4 flex flex-col sm:flex-row sm:items-center gap-3"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-900">
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                   {r.medicine} {r.dosage ? `· ${r.dosage}` : ""}
                 </p>
-                <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                   <MapPin className="h-3.5 w-3.5 shrink-0" />
                   {r.pharmacy
                     ? `${r.pharmacy.name} — ${r.pharmacy.commune}, ${r.pharmacy.province}`
-                    : "Pharmacie inconnue"}
+                    : t("patient:findMedication.unknownPharmacy")}
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <span className="text-sm font-semibold text-slate-700">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {formatCurrency(r.price)}
                 </span>
                 {r.quantity > 0 ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
                     <Check className="h-3.5 w-3.5" />
-                    {r.quantity} unité{r.quantity > 1 ? "s" : ""}
+                    {t("patient:findMedication.unitsAvailable", { count: r.quantity })}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-xs font-semibold">
                     <XCircle className="h-3.5 w-3.5" />
-                    Rupture de stock
+                    {t("patient:findMedication.outOfStock")}
                   </span>
                 )}
                 {r.quantity > 0 && r.pharmacy && (
@@ -137,7 +141,7 @@ export default function FindMedication() {
                     }
                     className="px-3 py-1.5 rounded-lg bg-[#063b1e] text-[#6eff8a] text-xs font-semibold hover:bg-black"
                   >
-                    Commander
+                    {t("patient:findMedication.orderButton")}
                   </button>
                 )}
               </div>

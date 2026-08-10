@@ -1,0 +1,155 @@
+{
+  "app": {
+    "name": "Pharma Core",
+    "tagline": "Gestion de Pharmacie"
+  },
+  "nav": {
+    "settings": "Paramètres",
+    "logout": "Déconnexion",
+    "export": "Exporter les données",
+    "deleteAccount": "Supprimer le compte",
+    "notifications": "Notifications",
+    "search": "Rechercher"
+  },
+  "buttons": {
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Valider",
+    "retry": "Réessayer",
+    "viewAll": "Tout voir",
+    "markAllRead": "Tout marquer comme lu",
+    "loadMore": "Charger plus"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "yes": "Oui",
+    "no": "Non",
+    "none": "Aucun",
+    "optional": "optionnel",
+    "required": "requis",
+    "today": "Aujourd'hui",
+    "search": "Rechercher",
+    "status": "Statut",
+    "date": "Date",
+    "actions": "Actions",
+    "total": "Total",
+    "quantity": "Quantité",
+    "unknown": "Inconnu"
+  },
+  "empty": {
+    "title": "Rien à afficher pour l'instant",
+    "description": "Il n'y a rien à afficher ici pour le moment."
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Veuillez réessayer.",
+    "network": "Impossible de contacter le serveur. Vérifiez votre connexion et réessayez.",
+    "loadFailed": "Échec du chargement des données.",
+    "TOO_MANY_ATTEMPTS": "Trop de tentatives. Réessayez plus tard.",
+    "SERVER_ERROR": "Une erreur est survenue. Veuillez réessayer.",
+    "VALIDATION_ERROR": "Veuillez vérifier les champs indiqués.",
+    "MISSING_CREDENTIALS": "Email et mot de passe requis.",
+    "WEAK_PASSWORD": "Mot de passe trop court (minimum 8 caractères).",
+    "EMAIL_IN_USE": "Un compte existe déjà avec cet email.",
+    "SIGNUP_FAILED": "Impossible de créer votre compte. Veuillez réessayer.",
+    "INVALID_CREDENTIALS": "Email ou mot de passe incorrect.",
+    "nameRequired": "Le nom complet est requis.",
+    "invalidStatus": "Statut invalide.",
+    "notFound": "Introuvable.",
+    "ROLE_MISMATCH_PATIENT": "Ce compte est un compte patient. Sélectionnez « Patient » pour vous connecter.",
+    "ROLE_MISMATCH_PHARMACY": "Ce compte est un compte pharmacie. Sélectionnez « Pharmacie » pour vous connecter.",
+    "DOWNLOAD_FAILED": "Le téléchargement a échoué. Veuillez réessayer."
+  },
+  "confirm": {
+    "areYouSure": "Êtes-vous sûr(e) ?",
+    "cannotBeUndone": "Cette action est irréversible."
+  },
+  "theme": {
+    "light": "Clair",
+    "dark": "Sombre"
+  },
+  "orderStatus": {
+    "pending": "En attente",
+    "approved": "Approuvée",
+    "preparing": "En préparation",
+    "ready_for_pickup": "Prête pour retrait",
+    "completed": "Terminée",
+    "cancelled": "Annulée"
+  },
+  "header": {
+    "services": "Services",
+    "features": "Fonctionnalités",
+    "contact": "Contact",
+    "dashboard": "Tableau de bord",
+    "login": "Se connecter",
+    "signup": "S'inscrire"
+  },
+  "footer": {
+    "rights": "Tous droits réservés."
+  },
+  "confirmDialog": {
+    "deleting": "Suppression…"
+  },
+  "messaging": {
+    "newConversation": "Nouvelle conversation",
+    "selectConversation": "Sélectionnez une conversation",
+    "selectConversationHint": "Choisissez un fil de discussion pour afficher les messages.",
+    "startConversation": "Démarrez la conversation en envoyant un message.",
+    "placeholder": "Écrire un message…",
+    "send": "Envoyer",
+    "deleteMessage": "Supprimer ce message",
+    "deleteTitle": "Supprimer ce message ?",
+    "deleteMessageConfirm": "Le message sera supprimé pour tous les participants de la conversation. Cette action est irréversible."
+  },
+  "errorBanner": {
+    "prefix": "Erreur de chargement : {{message}}"
+  },
+  "loadingLabel": "Chargement",
+  "starRating": {
+    "starLabel_one": "{{count}} étoile",
+    "starLabel_other": "{{count}} étoiles"
+  },
+  "home": {
+    "badge": "Gestion intelligente pour pharmacies du Burundi",
+    "heroTitle1": "Votre pharmacie,",
+    "heroTitle2": "parfaitement organisée.",
+    "heroSubtitle": "Pharma Core centralise votre inventaire, vos ventes, vos patients et vos fournisseurs dans une plateforme sécurisée. Suivi en temps réel, alertes intelligentes et analyses détaillées — conçu pour les officines burundaises.",
+    "ctaStart": "Commencer gratuitement",
+    "ctaSeeServices": "Voir les services",
+    "servicesTitle": "Tout ce dont votre officine a besoin",
+    "servicesSubtitle": "Une suite complète d'outils pensés pour les pharmaciens — simples, rapides et fiables.",
+    "service": {
+      "posTitle": "Point de Vente (POS)",
+      "posDesc": "Caisse rapide avec lecture des stocks en temps réel, calcul automatique en FBU et tickets de vente détaillés.",
+      "inventoryTitle": "Inventaire des Médicaments",
+      "inventoryDesc": "Gérez votre catalogue, suivez les lots, dates de péremption et niveaux de stock avec précision.",
+      "patientsTitle": "Patients & Clients",
+      "patientsDesc": "Base de données patients sécurisée avec historique d'achats, allergies et notes cliniques.",
+      "suppliersTitle": "Fournisseurs & Approvisionnements",
+      "suppliersDesc": "Gérez vos fournisseurs et créez des commandes de réapprovisionnement qui mettent à jour le stock automatiquement.",
+      "analyticsTitle": "Analyses & Rapports",
+      "analyticsDesc": "Tableaux de bord avec chiffre d'affaires, médicaments les plus vendus et valorisation du stock.",
+      "alertsTitle": "Alertes Intelligentes",
+      "alertsDesc": "Notifications automatiques pour stock bas et péremptions proches — paramétrables par pharmacie."
+    },
+    "feature": {
+      "isolationTitle": "Données isolées par pharmacie",
+      "isolationDesc": "Chaque officine accède uniquement à ses propres données, protégées par authentification et politiques de sécurité strictes (Row-Level Security).",
+      "exportTitle": "Export complet en JSON",
+      "exportDesc": "Téléchargez à tout moment l'historique complet de votre pharmacie pour archivage, audit ou migration.",
+      "alertsTitle": "Alertes en temps réel",
+      "alertsDesc": "Stock bas ou médicaments approchant la péremption ? Pharma Core vous alerte au bon moment."
+    },
+    "ctaTitle1": "Prêt à moderniser",
+    "ctaTitle2": "votre officine ?",
+    "ctaSubtitle": "Créez votre compte gratuit et commencez à gérer votre pharmacie en quelques minutes.",
+    "ctaButton": "Créer mon compte"
+  }
+}

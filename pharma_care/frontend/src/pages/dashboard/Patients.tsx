@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
 import PageHeader from "../../components/PageHeader";
 import { formatDate } from "../../lib/format";
+import { translateApiError } from "../../i18n/apiError";
 
 type Patient = {
   id: string;
@@ -28,6 +30,7 @@ const EMPTY: Partial<Patient> = {
 };
 
 export default function Patients() {
+  const { t } = useTranslation(["dashboard", "common"]);
   const [list, setList] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +42,7 @@ export default function Patients() {
     try {
       setList(await api<Patient[]>("/data/patients"));
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setLoading(false);
     }
@@ -64,12 +67,12 @@ export default function Patients() {
       setEditing(null);
       await load();
     } catch (err) {
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     }
   }
 
   async function remove(id: string) {
-    if (!confirm("Supprimer ce patient ?")) return;
+    if (!confirm(t("dashboard:patients.confirmDelete"))) return;
     await api(`/data/patients/${id}`, { method: "DELETE" });
     await load();
   }
@@ -77,67 +80,69 @@ export default function Patients() {
   return (
     <div>
       <PageHeader
-        title="Patients & Clients"
-        subtitle="Base de données patients avec coordonnées et notes cliniques."
+        title={t("dashboard:patients.title")}
+        subtitle={t("dashboard:patients.subtitle")}
         action={
           <button
             onClick={() => setEditing({ ...EMPTY })}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#063b1e] text-[#6eff8a] font-semibold hover:bg-black"
           >
-            <Plus className="h-4 w-4" /> Ajouter un patient
+            <Plus className="h-4 w-4" /> {t("dashboard:patients.addPatient")}
           </button>
         }
       />
 
       {error && (
-        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-3">
-          <span>Erreur de chargement : {error}</span>
+        <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300 flex items-center gap-3">
+          <span>{t("common:errorBanner.prefix", { message: error })}</span>
           <button onClick={load} className="ml-auto underline font-semibold">
-            Réessayer
+            {t("common:buttons.retry")}
           </button>
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         {loading ? (
-          <p className="p-6 text-slate-500">Chargement…</p>
+          <p className="p-6 text-slate-500 dark:text-slate-400">{t("common:common.loading")}</p>
         ) : list.length === 0 ? (
-          <p className="p-6 text-slate-500">Aucun patient enregistré.</p>
+          <p className="p-6 text-slate-500 dark:text-slate-400">{t("dashboard:patients.empty")}</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-900 text-xs uppercase text-slate-500 dark:text-slate-400">
               <tr>
-                <th className="text-left px-4 py-3">Nom</th>
-                <th className="text-left px-4 py-3">Téléphone</th>
-                <th className="text-left px-4 py-3">Email</th>
-                <th className="text-left px-4 py-3">Date de naissance</th>
-                <th className="text-left px-4 py-3">Allergies</th>
-                <th className="text-right px-4 py-3">Actions</th>
+                <th className="text-left px-4 py-3">{t("dashboard:patients.columns.name")}</th>
+                <th className="text-left px-4 py-3">{t("dashboard:patients.columns.phone")}</th>
+                <th className="text-left px-4 py-3">{t("dashboard:patients.columns.email")}</th>
+                <th className="text-left px-4 py-3">{t("dashboard:patients.columns.dateOfBirth")}</th>
+                <th className="text-left px-4 py-3">{t("dashboard:patients.columns.allergies")}</th>
+                <th className="text-right px-4 py-3">{t("common:common.actions")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {list.map((p) => (
                 <tr key={p.id}>
-                  <td className="px-4 py-3 font-semibold text-slate-900">
+                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
                     {p.full_name}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{p.phone || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{p.email || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{p.phone || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{p.email || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                     {formatDate(p.date_of_birth)}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{p.allergies || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{p.allergies || "—"}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex gap-2">
                       <button
                         onClick={() => setEditing(p)}
-                        className="p-1.5 rounded-lg hover:bg-slate-100"
+                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
+                        aria-label={t("common:buttons.edit")}
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => remove(p.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-600"
+                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400"
+                        aria-label={t("common:buttons.delete")}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -154,68 +159,68 @@ export default function Patients() {
         <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center px-4 py-8 overflow-y-auto">
           <form
             onSubmit={save}
-            className="bg-white rounded-2xl w-full max-w-xl p-6 my-auto"
+            className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-xl p-6 my-auto"
           >
-            <h3 className="text-xl font-bold text-slate-900 mb-4">
-              {editing.id ? "Modifier le patient" : "Ajouter un patient"}
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+              {editing.id ? t("dashboard:patients.modal.editTitle") : t("dashboard:patients.modal.addTitle")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FieldInput
-                label="Nom complet"
+                label={t("dashboard:patients.modal.fields.fullName")}
                 required
                 value={editing.full_name || ""}
                 onChange={(v) => setEditing({ ...editing, full_name: v })}
               />
               <FieldInput
-                label="Téléphone"
+                label={t("dashboard:patients.modal.fields.phone")}
                 value={editing.phone || ""}
                 onChange={(v) => setEditing({ ...editing, phone: v })}
               />
               <FieldInput
-                label="Email"
+                label={t("dashboard:patients.modal.fields.email")}
                 type="email"
                 value={editing.email || ""}
                 onChange={(v) => setEditing({ ...editing, email: v })}
               />
               <FieldInput
-                label="Date de naissance"
+                label={t("dashboard:patients.modal.fields.dateOfBirth")}
                 type="date"
                 value={editing.date_of_birth || ""}
                 onChange={(v) => setEditing({ ...editing, date_of_birth: v })}
               />
               <label className="block">
-                <span className="block text-xs font-semibold text-slate-600 mb-1">
-                  Genre
+                <span className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  {t("dashboard:patients.modal.fields.gender")}
                 </span>
                 <select
                   value={editing.gender || ""}
                   onChange={(e) =>
                     setEditing({ ...editing, gender: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm"
                 >
                   <option value="">—</option>
-                  <option value="F">Féminin</option>
-                  <option value="M">Masculin</option>
-                  <option value="other">Autre</option>
+                  <option value="F">{t("dashboard:patients.modal.genderOptions.female")}</option>
+                  <option value="M">{t("dashboard:patients.modal.genderOptions.male")}</option>
+                  <option value="other">{t("dashboard:patients.modal.genderOptions.other")}</option>
                 </select>
               </label>
               <FieldInput
-                label="Adresse"
+                label={t("dashboard:patients.modal.fields.address")}
                 value={editing.address || ""}
                 onChange={(v) => setEditing({ ...editing, address: v })}
               />
               <div className="md:col-span-2">
                 <FieldInput
-                  label="Allergies"
+                  label={t("dashboard:patients.modal.fields.allergies")}
                   value={editing.allergies || ""}
                   onChange={(v) => setEditing({ ...editing, allergies: v })}
                 />
               </div>
               <div className="md:col-span-2">
                 <label className="block">
-                  <span className="block text-xs font-semibold text-slate-600 mb-1">
-                    Notes
+                  <span className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    {t("dashboard:patients.modal.fields.notes")}
                   </span>
                   <textarea
                     rows={3}
@@ -223,7 +228,7 @@ export default function Patients() {
                     onChange={(e) =>
                       setEditing({ ...editing, notes: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm"
                   />
                 </label>
               </div>
@@ -232,15 +237,15 @@ export default function Patients() {
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="px-4 py-2 rounded-lg border border-slate-200 font-semibold hover:bg-slate-50"
+                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t("common:buttons.cancel")}
               </button>
               <button
                 type="submit"
                 className="px-4 py-2 rounded-lg bg-[#063b1e] text-[#6eff8a] font-semibold hover:bg-black"
               >
-                Enregistrer
+                {t("common:buttons.save")}
               </button>
             </div>
           </form>
@@ -265,7 +270,7 @@ function FieldInput({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs font-semibold text-slate-600 mb-1">
+      <span className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </span>
@@ -274,7 +279,7 @@ function FieldInput({
         required={required}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
       />
     </label>
   );

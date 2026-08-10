@@ -1,0 +1,22 @@
+{
+  "kinds": {
+    "new_rating": "You received a new rating.",
+    "new_order": "You have a new order.",
+    "order_status": "Your order is now: {{status}}.",
+    "new_message": "You have a new message.",
+    "prescription_approved": "You have a prescription update. Log in to your secure account to view details.",
+    "medication_ready": "You have a prescription update. Log in to your secure account to view details.",
+    "lab_results": "New results are available. Log in to your secure account to view details.",
+    "announcement": "New announcement."
+  },
+  "unreadCount_one": "{{count}} unread notification.",
+  "unreadCount_other": "{{count}} unread notifications.",
+  "upToDate": "You're all caught up.",
+  "empty": "No notifications",
+  "markAllRead": "Mark all as read",
+  "delete": {
+    "title": "Delete this notification?",
+    "message": "The notification will be permanently removed from your list.",
+    "aria": "Delete this notification"
+  }
+}

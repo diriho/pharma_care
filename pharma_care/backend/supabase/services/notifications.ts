@@ -12,6 +12,14 @@ export type NotificationKind =
 
 // Single entry point for persisted notifications. Push/email channels can be
 // added here later without touching callers (fan-out stays in one place).
+//
+// Content policy (minimum necessary — see spec §6.1): `message` must stay
+// generic — no medication names, dosages, controlled-substance status, or
+// other prescription/health detail. The frontend (NotificationCenter)
+// re-derives a translated, generic display string from `kind`+`meta` for the
+// kinds below and only falls back to this raw `message` for unknown kinds,
+// so keep new kinds registered on both sides rather than relying on this
+// string alone. Full detail is only ever shown inside the authenticated app.
 export async function createNotification(
   userId: string,
   kind: NotificationKind,

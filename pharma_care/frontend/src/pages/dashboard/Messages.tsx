@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import PageHeader from "../../components/PageHeader";
 import MessagingPanel, {
   type MessagingAdapter,
@@ -21,18 +22,19 @@ const adapter: MessagingAdapter = {
 // the pharmacy replies from here.
 export default function Messages() {
   const { user } = useAuth();
+  const { t } = useTranslation("dashboard");
 
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        title="Messages"
-        subtitle="Répondez aux questions de vos patients en toute sécurité."
+        title={t("messages.title")}
+        subtitle={t("messages.subtitle")}
       />
       <MessagingPanel
         adapter={adapter}
         currentUserId={user?.id || ""}
-        emptyTitle="Aucune conversation"
-        emptyHint="Les conversations démarrées par vos patients apparaîtront ici."
+        emptyTitle={t("messages.empty")}
+        emptyHint={t("messages.emptyHint")}
       />
     </div>
   );

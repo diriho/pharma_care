@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../api/client";
 import { useAuth } from "../../contexts/AuthContext";
 import { formatCurrency, formatDate } from "../../lib/format";
 import PageHeader from "../../components/PageHeader";
+import { translateApiError } from "../../i18n/apiError";
 
 type Medicine = {
   id: string;
@@ -42,6 +44,7 @@ const EMPTY: Partial<Medicine> = {
 
 export default function Inventory() {
   const { pharmacy } = useAuth();
+  const { t } = useTranslation(["dashboard", "common"]);
   const [meds, setMeds] = useState<Medicine[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +63,7 @@ export default function Inventory() {
       setMeds(m);
       setSuppliers(s);
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setLoading(false);
     }
@@ -97,17 +100,17 @@ export default function Inventory() {
       setEditing(null);
       await load();
     } catch (err) {
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     }
   }
 
   async function remove(id: string) {
-    if (!confirm("Supprimer ce médicament ?")) return;
+    if (!confirm(t("dashboard:inventory.confirmDelete"))) return;
     try {
       await api(`/data/medicines/${id}`, { method: "DELETE" });
       await load();
     } catch (err) {
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     }
   }
 
@@ -122,90 +125,94 @@ export default function Inventory() {
   return (
     <div>
       <PageHeader
-        title="Inventaire des médicaments"
-        subtitle="Suivi des stocks, lots, péremptions et tarification."
+        title={t("dashboard:inventory.title")}
+        subtitle={t("dashboard:inventory.subtitle")}
         action={
           <button
             onClick={() => setEditing({ ...EMPTY })}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#063b1e] text-[#6eff8a] font-semibold hover:bg-black"
           >
-            <Plus className="h-4 w-4" /> Ajouter un médicament
+            <Plus className="h-4 w-4" /> {t("dashboard:inventory.addMedicine")}
           </button>
         }
       />
 
       {error && (
-        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-3">
-          <span>Erreur de chargement : {error}</span>
+        <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300 flex items-center gap-3">
+          <span>{t("common:errorBanner.prefix", { message: error })}</span>
           <button onClick={load} className="ml-auto underline font-semibold">
-            Réessayer
+            {t("common:buttons.retry")}
           </button>
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700">
           <input
             type="search"
-            placeholder="Rechercher (nom, molécule, catégorie, lot)…"
+            placeholder={t("dashboard:inventory.searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full max-w-md px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full max-w-md px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
         {loading ? (
-          <p className="p-6 text-slate-500">Chargement…</p>
+          <p className="p-6 text-slate-500 dark:text-slate-400">{t("common:common.loading")}</p>
         ) : filtered.length === 0 ? (
-          <p className="p-6 text-slate-500">Aucun médicament. Commencez par en ajouter un.</p>
+          <p className="p-6 text-slate-500 dark:text-slate-400">{t("dashboard:inventory.empty")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+              <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">
                 <tr>
-                  <th className="text-left px-4 py-3">Médicament</th>
-                  <th className="text-left px-4 py-3">Catégorie</th>
-                  <th className="text-right px-4 py-3">Stock</th>
-                  <th className="text-right px-4 py-3">PA</th>
-                  <th className="text-right px-4 py-3">PV</th>
-                  <th className="text-left px-4 py-3">Péremption</th>
-                  <th className="text-right px-4 py-3">Actions</th>
+                  <th className="text-left px-4 py-3">{t("dashboard:inventory.columns.medicine")}</th>
+                  <th className="text-left px-4 py-3">{t("dashboard:inventory.columns.category")}</th>
+                  <th className="text-right px-4 py-3">{t("dashboard:inventory.columns.stock")}</th>
+                  <th className="text-right px-4 py-3">{t("dashboard:inventory.columns.purchasePrice")}</th>
+                  <th className="text-right px-4 py-3">{t("dashboard:inventory.columns.sellingPrice")}</th>
+                  <th className="text-left px-4 py-3">{t("dashboard:inventory.columns.expiry")}</th>
+                  <th className="text-right px-4 py-3">{t("common:common.actions")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {filtered.map((m) => {
                   const low = m.stock <= m.min_stock_level;
                   return (
-                    <tr key={m.id} className="hover:bg-slate-50">
+                    <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/60">
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-slate-900">{m.name}</div>
-                        <div className="text-xs text-slate-500">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{m.name}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
                           {m.dosage} {m.molecule ? `• ${m.molecule}` : ""}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{m.category || "—"}</td>
-                      <td className={`px-4 py-3 text-right font-semibold ${low ? "text-red-600" : "text-slate-900"}`}>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{m.category || "—"}</td>
+                      <td
+                        className={`px-4 py-3 text-right font-semibold ${
+                          low ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100"
+                        }`}
+                      >
                         {m.stock}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-600">
+                      <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">
                         {formatCurrency(m.purchase_price, currency)}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-900 font-semibold">
+                      <td className="px-4 py-3 text-right text-slate-900 dark:text-slate-100 font-semibold">
                         {formatCurrency(m.selling_price, currency)}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{formatDate(m.expiry_date)}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{formatDate(m.expiry_date)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex gap-2">
                           <button
                             onClick={() => setEditing(m)}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600"
-                            aria-label="Modifier"
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
+                            aria-label={t("common:buttons.edit")}
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => remove(m.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-600"
-                            aria-label="Supprimer"
+                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400"
+                            aria-label={t("common:buttons.delete")}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -246,6 +253,7 @@ function MedicineModal({
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
 }) {
+  const { t } = useTranslation(["dashboard", "common"]);
   function set<K extends keyof Medicine>(k: K, v: Medicine[K] | string) {
     onChange({ ...value, [k]: v });
   }
@@ -253,13 +261,13 @@ function MedicineModal({
     <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center px-4 py-8 overflow-y-auto">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-2xl w-full max-w-2xl p-6 my-auto"
+        className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl p-6 my-auto"
       >
-        <h3 className="text-xl font-bold text-slate-900 mb-4">
-          {value.id ? "Modifier le médicament" : "Ajouter un médicament"}
+        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          {value.id ? t("dashboard:inventory.modal.editTitle") : t("dashboard:inventory.modal.addTitle")}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field label="Nom" required>
+          <Field label={t("dashboard:inventory.modal.fields.name")} required>
             <input
               required
               value={value.name || ""}
@@ -267,28 +275,28 @@ function MedicineModal({
               className="input"
             />
           </Field>
-          <Field label="Catégorie">
+          <Field label={t("dashboard:inventory.modal.fields.category")}>
             <input
               value={value.category || ""}
               onChange={(e) => set("category", e.target.value)}
               className="input"
             />
           </Field>
-          <Field label="Dosage">
+          <Field label={t("dashboard:inventory.modal.fields.dosage")}>
             <input
               value={value.dosage || ""}
               onChange={(e) => set("dosage", e.target.value)}
               className="input"
             />
           </Field>
-          <Field label="Molécule">
+          <Field label={t("dashboard:inventory.modal.fields.molecule")}>
             <input
               value={value.molecule || ""}
               onChange={(e) => set("molecule", e.target.value)}
               className="input"
             />
           </Field>
-          <Field label="Stock initial">
+          <Field label={t("dashboard:inventory.modal.fields.initialStock")}>
             <input
               type="number"
               min={0}
@@ -297,7 +305,7 @@ function MedicineModal({
               className="input"
             />
           </Field>
-          <Field label="Seuil stock bas">
+          <Field label={t("dashboard:inventory.modal.fields.lowStockThreshold")}>
             <input
               type="number"
               min={0}
@@ -306,7 +314,7 @@ function MedicineModal({
               className="input"
             />
           </Field>
-          <Field label="Prix d'achat">
+          <Field label={t("dashboard:inventory.modal.fields.purchasePrice")}>
             <input
               type="number"
               min={0}
@@ -316,7 +324,7 @@ function MedicineModal({
               className="input"
             />
           </Field>
-          <Field label="Prix de vente">
+          <Field label={t("dashboard:inventory.modal.fields.sellingPrice")}>
             <input
               type="number"
               min={0}
@@ -326,14 +334,14 @@ function MedicineModal({
               className="input"
             />
           </Field>
-          <Field label="N° de lot">
+          <Field label={t("dashboard:inventory.modal.fields.batchNumber")}>
             <input
               value={value.batch_number || ""}
               onChange={(e) => set("batch_number", e.target.value)}
               className="input"
             />
           </Field>
-          <Field label="Date de péremption">
+          <Field label={t("dashboard:inventory.modal.fields.expiryDate")}>
             <input
               type="date"
               value={value.expiry_date || ""}
@@ -341,14 +349,14 @@ function MedicineModal({
               className="input"
             />
           </Field>
-          <Field label="Emplacement (rayon)">
+          <Field label={t("dashboard:inventory.modal.fields.shelfLocation")}>
             <input
               value={value.shelf_location || ""}
               onChange={(e) => set("shelf_location", e.target.value)}
               className="input"
             />
           </Field>
-          <Field label="Fournisseur">
+          <Field label={t("dashboard:inventory.modal.fields.supplier")}>
             <select
               value={value.supplier_id || ""}
               onChange={(e) => set("supplier_id", e.target.value || null)}
@@ -363,7 +371,7 @@ function MedicineModal({
             </select>
           </Field>
           <div className="md:col-span-2">
-            <Field label="Description">
+            <Field label={t("dashboard:inventory.modal.fields.description")}>
               <textarea
                 rows={3}
                 value={value.description || ""}
@@ -377,18 +385,18 @@ function MedicineModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg border border-slate-200 font-semibold hover:bg-slate-50"
+            className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700"
           >
-            Annuler
+            {t("common:buttons.cancel")}
           </button>
           <button
             type="submit"
             className="px-4 py-2 rounded-lg bg-[#063b1e] text-[#6eff8a] font-semibold hover:bg-black"
           >
-            Enregistrer
+            {t("common:buttons.save")}
           </button>
         </div>
-        <style>{`.input{width:100%;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.5rem;font-size:.875rem;background:#fff}.input:focus{outline:none;box-shadow:0 0 0 2px rgb(16 185 129 / .4);border-color:transparent}`}</style>
+        <style>{`.input{width:100%;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.5rem;font-size:.875rem;background:#fff;color:#0f172a}.input:focus{outline:none;box-shadow:0 0 0 2px rgb(16 185 129 / .4);border-color:transparent}.dark .input{border-color:#475569;background:#0f172a;color:#f1f5f9}`}</style>
       </form>
     </div>
   );
@@ -405,7 +413,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs font-semibold text-slate-600 mb-1">
+      <span className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </span>

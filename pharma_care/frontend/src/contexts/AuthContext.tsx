@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { api } from "../api/client";
+import { api, ApiError } from "../api/client";
 
 // type definitions for this app
 export type UserRole = "facility_admin" | "patient";
@@ -203,10 +203,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Enforce the selected portal BEFORE installing the session, so a
       // mismatch never leaves the user half-logged-in on the wrong side.
       if (expectedRole && role !== expectedRole) {
-        throw new Error(
+        // Thrown as an ApiError (with a code) rather than a plain Error so
+        // Login.tsx's translateApiError() renders it in the active language
+        // instead of this French fallback text.
+        throw new ApiError(
           role === "patient"
             ? "Ce compte est un compte patient. Sélectionnez « Patient » pour vous connecter."
-            : "Ce compte est un compte pharmacie. Sélectionnez « Pharmacie » pour vous connecter."
+            : "Ce compte est un compte pharmacie. Sélectionnez « Pharmacie » pour vous connecter.",
+          role === "patient" ? "ROLE_MISMATCH_PATIENT" : "ROLE_MISMATCH_PHARMACY"
         );
       }
       await supabase.auth.setSession({

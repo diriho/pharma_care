@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import NotificationCenter, {
   type NotificationsAdapter,
 } from "../../components/notifications/NotificationCenter";
@@ -12,6 +13,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "../../services/pharmacyAdmin";
+import { translateApiError } from "../../i18n/apiError";
 
 const adapter: NotificationsAdapter = {
   list: getInboxNotifications,
@@ -25,12 +27,13 @@ type Alert = { type: string; severity: string; message: string };
 // Pharmacy notification center: the persisted inbox (orders, ratings, messages)
 // plus the computed stock & expiry alerts that used to live in the bell dropdown.
 export default function Notifications() {
+  const { t } = useTranslation("dashboard");
   return (
     <div>
       <NotificationCenter
-        title="Notifications"
+        title={t("notifications.title")}
         adapter={adapter}
-        emptyHint="Les nouvelles commandes, évaluations et messages de vos patients apparaîtront ici."
+        emptyHint={t("notifications.emptyHint")}
       />
       <AlertsSection />
     </div>
@@ -38,6 +41,7 @@ export default function Notifications() {
 }
 
 function AlertsSection() {
+  const { t } = useTranslation(["dashboard", "common"]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +53,7 @@ function AlertsSection() {
       const data = await api<{ alerts: Alert[] }>("/data/notifications");
       setAlerts(data.alerts || []);
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setLoading(false);
     }
@@ -60,17 +64,17 @@ function AlertsSection() {
   }, []);
 
   return (
-    <section className="mt-6 bg-white rounded-2xl border border-slate-200 p-5">
-      <h3 className="text-lg font-bold text-slate-900 mb-3">
-        Alertes stock &amp; péremption
+    <section className="mt-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-3">
+        {t("dashboard:notifications.alerts.title")}
       </h3>
       {error && <ErrorBanner message={error} onRetry={load} />}
       {loading ? (
         <SkeletonLines lines={3} />
       ) : alerts.length === 0 ? (
-        <p className="text-sm text-slate-500 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          Aucune alerte. Vos stocks et péremptions sont sous contrôle.
+        <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          {t("dashboard:notifications.alerts.empty")}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -79,8 +83,8 @@ function AlertsSection() {
               key={i}
               className={`flex items-center gap-3 p-3 rounded-lg border ${
                 alert.severity === "critical"
-                  ? "bg-red-50 border-red-200 text-red-800"
-                  : "bg-amber-50 border-amber-200 text-amber-800"
+                  ? "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
+                  : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300"
               }`}
             >
               {alert.type === "low_stock" ? (

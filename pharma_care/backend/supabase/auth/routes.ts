@@ -1,8 +1,35 @@
 import { Router, type Request, type Response } from "express";
+import rateLimit from "express-rate-limit";
 import { admin, credentialClient } from "../client";
 import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 
 const router = Router();
+
+// Stable error codes the frontend can map to translated, role/enumeration-safe
+// copy. The `error` field stays a reasonable French default for any caller
+// that doesn't consume `code` (e.g. manual testing), but never echoes raw
+// Supabase/Postgres error text — that's logged server-side only via `detail`.
+function authError(
+  res: Response,
+  status: number,
+  code: string,
+  message: string,
+  detail?: unknown
+): Response {
+  if (detail) console.error(`[auth] ${code}:`, detail);
+  return res.status(status).json({ error: message, code });
+}
+
+// Generic limiter for the unauthenticated auth endpoints (login/signup) to
+// blunt brute-force/credential-stuffing attempts. Keyed by IP.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) =>
+    authError(res, 429, "TOO_MANY_ATTEMPTS", "Trop de tentatives. Réessayez plus tard."),
+});
 
 interface PharmacyPayload {
   name?: string;
@@ -47,16 +74,16 @@ function validatePharmacy(payload: PharmacyPayload): string | null {
 }
 
 // Signup route to create a new user and pharmacy settings
-router.post("/signup", async (req: Request, res: Response) => {
+router.post("/signup", authLimiter, async (req: Request, res: Response) => {
   const { email, password, pharmacy } = req.body || {};
   if (!email || !password) {
-    return res.status(400).json({ error: "Email et mot de passe requis" });
+    return authError(res, 400, "MISSING_CREDENTIALS", "Email et mot de passe requis");
   }
-  if (String(password).length < 6) {
-    return res.status(400).json({ error: "Mot de passe trop court (min 6 caractères)" });
+  if (String(password).length < 8) {
+    return authError(res, 400, "WEAK_PASSWORD", "Mot de passe trop court (min 8 caractères)");
   }
   const validationError = validatePharmacy((pharmacy as PharmacyPayload) || {});
-  if (validationError) return res.status(400).json({ error: validationError });
+  if (validationError) return authError(res, 400, "VALIDATION_ERROR", validationError);
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
@@ -67,7 +94,14 @@ router.post("/signup", async (req: Request, res: Response) => {
   });
 
   if (createError || !created?.user) {
-    return res.status(400).json({ error: createError?.message || "Création utilisateur échouée" });
+    const code = /registered|exists/i.test(createError?.message || "") ? "EMAIL_IN_USE" : "SIGNUP_FAILED";
+    return authError(
+      res,
+      400,
+      code,
+      code === "EMAIL_IN_USE" ? "Un compte existe déjà avec cet email" : "Création du compte impossible",
+      createError
+    );
   }
 
   const userId = created.user.id;
@@ -89,7 +123,7 @@ router.post("/signup", async (req: Request, res: Response) => {
 
   if (settingsError) {
     await admin.auth.admin.deleteUser(userId).catch(() => {});
-    return res.status(500).json({ error: `Échec création profil: ${settingsError.message}` });
+    return authError(res, 500, "SIGNUP_FAILED", "Échec de la création du profil pharmacie", settingsError);
   }
 
   const { data: signIn, error: signInError } = await credentialClient().auth.signInWithPassword({
@@ -97,7 +131,7 @@ router.post("/signup", async (req: Request, res: Response) => {
     password,
   });
   if (signInError) {
-    return res.status(500).json({ error: signInError.message });
+    return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", signInError);
   }
   return res.json({ session: signIn.session, user: signIn.user });
 });
@@ -112,17 +146,17 @@ interface PatientProfilePayload {
 }
 
 // Patient signup: creates an auth user with the "patient" role and a patient profile
-router.post("/signup/patient", async (req: Request, res: Response) => {
+router.post("/signup/patient", authLimiter, async (req: Request, res: Response) => {
   const { email, password, profile } = req.body || {};
   if (!email || !password) {
-    return res.status(400).json({ error: "Email et mot de passe requis" });
+    return authError(res, 400, "MISSING_CREDENTIALS", "Email et mot de passe requis");
   }
-  if (String(password).length < 6) {
-    return res.status(400).json({ error: "Mot de passe trop court (min 6 caractères)" });
+  if (String(password).length < 8) {
+    return authError(res, 400, "WEAK_PASSWORD", "Mot de passe trop court (min 8 caractères)");
   }
   const p = (profile as PatientProfilePayload) || {};
   if (!p.fullName || !String(p.fullName).trim()) {
-    return res.status(400).json({ error: "Nom complet requis" });
+    return authError(res, 400, "VALIDATION_ERROR", "Nom complet requis");
   }
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -133,7 +167,14 @@ router.post("/signup/patient", async (req: Request, res: Response) => {
     app_metadata: { role: "patient" },
   });
   if (createError || !created?.user) {
-    return res.status(400).json({ error: createError?.message || "Création utilisateur échouée" });
+    const code = /registered|exists/i.test(createError?.message || "") ? "EMAIL_IN_USE" : "SIGNUP_FAILED";
+    return authError(
+      res,
+      400,
+      code,
+      code === "EMAIL_IN_USE" ? "Un compte existe déjà avec cet email" : "Création du compte impossible",
+      createError
+    );
   }
   const userId = created.user.id;
 
@@ -148,7 +189,7 @@ router.post("/signup/patient", async (req: Request, res: Response) => {
   });
   if (profileError) {
     await admin.auth.admin.deleteUser(userId).catch(() => {});
-    return res.status(500).json({ error: `Échec création profil: ${profileError.message}` });
+    return authError(res, 500, "SIGNUP_FAILED", "Échec de la création du profil patient", profileError);
   }
 
   const { data: signIn, error: signInError } = await credentialClient().auth.signInWithPassword({
@@ -156,20 +197,24 @@ router.post("/signup/patient", async (req: Request, res: Response) => {
     password,
   });
   if (signInError) {
-    return res.status(500).json({ error: signInError.message });
+    return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", signInError);
   }
   return res.json({ session: signIn.session, user: signIn.user });
 });
 
 // if the user is already logged in, return their session and user info
 
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", authLimiter, async (req: Request, res: Response) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
-    return res.status(400).json({ error: "Email et mot de passe requis" });
+    return authError(res, 400, "MISSING_CREDENTIALS", "Email et mot de passe requis");
   }
   const { data, error } = await credentialClient().auth.signInWithPassword({ email, password });
-  if (error) return res.status(401).json({ error: error.message });
+  if (error) {
+    // Never distinguish "no such account" from "wrong password" — avoids
+    // user enumeration via response text.
+    return authError(res, 401, "INVALID_CREDENTIALS", "Email ou mot de passe incorrect", error);
+  }
   return res.json({ session: data.session, user: data.user });
 });
 
@@ -190,7 +235,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
       .eq("user_id", user.id)
       .single();
     if (error && error.code !== "PGRST116") {
-      return res.status(500).json({ error: error.message });
+      return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", error);
     }
     return res.json({ user, role, pharmacy: null, patientProfile: data || null });
   }
@@ -201,7 +246,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
     .eq("user_id", user.id)
     .single();
   if (error && error.code !== "PGRST116") {
-    return res.status(500).json({ error: error.message });
+    return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", error);
   }
   return res.json({ user, role, pharmacy: data || null, patientProfile: null });
 });
@@ -225,7 +270,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
     await admin.from(t).delete().eq("user_id", userId);
   }
   const { error } = await admin.auth.admin.deleteUser(userId);
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", error);
   return res.json({ ok: true });
 });
 

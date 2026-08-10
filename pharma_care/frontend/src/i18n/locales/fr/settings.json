@@ -1,0 +1,27 @@
+{
+  "pharmacy": {
+    "title": "Configuration de l'officine",
+    "subtitle": "Mettez à jour les informations et seuils d'alerte.",
+    "exportHistory": "Exporter l'historique (JSON)",
+    "saved": "Paramètres enregistrés.",
+    "loadError": "Erreur de chargement du profil pharmacie : {{message}}",
+    "noProfile": "Aucun profil pharmacie lié à ce compte. Contactez l'administrateur.",
+    "fields": {
+      "name": "Nom de la pharmacie",
+      "phone": "Téléphone",
+      "address": "Adresse",
+      "commune": "Commune",
+      "province": "Province",
+      "currency": "Devise",
+      "nif": "NIF",
+      "rc": "RC",
+      "expiryAlertMonths": "Alerte péremption (mois)",
+      "lowStockAlertLevel": "Seuil stock bas général"
+    }
+  },
+  "preferences": {
+    "title": "Préférences",
+    "language": "Langue",
+    "theme": "Apparence"
+  }
+}

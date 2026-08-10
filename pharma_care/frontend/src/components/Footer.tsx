@@ -1,7 +1,10 @@
+import { useTranslation } from "react-i18next";
+
 export default function Footer() {
   // footer component with the app name and copyright
+  const { t } = useTranslation("common");
   return (
-    <footer className="bg-white border-t border-[#f0f0f0] py-10">
+    <footer className="bg-white dark:bg-slate-950 border-t border-[#f0f0f0] dark:border-slate-800 py-10">
       <div className="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-[#063b1e] flex items-center justify-center">
@@ -16,10 +19,10 @@ export default function Footer() {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
           </div>
-          <span className="font-bold text-[#063b1e]">Pharma Core</span>
+          <span className="font-bold text-[#063b1e] dark:text-[#6eff8a]">{t("app.name")}</span>
         </div>
-        <p className="text-sm text-[#71717a]">
-          © {new Date().getFullYear()} Pharma Core. Tous droits réservés.
+        <p className="text-sm text-[#71717a] dark:text-slate-400">
+          © {new Date().getFullYear()} {t("app.name")}. {t("footer.rights")}
         </p>
       </div>
     </footer>

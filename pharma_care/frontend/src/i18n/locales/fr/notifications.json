@@ -1,0 +1,22 @@
+{
+  "kinds": {
+    "new_rating": "Vous avez reçu une nouvelle évaluation.",
+    "new_order": "Vous avez une nouvelle commande.",
+    "order_status": "Votre commande est maintenant : {{status}}.",
+    "new_message": "Vous avez un nouveau message.",
+    "prescription_approved": "Mise à jour de votre ordonnance. Connectez-vous à votre compte sécurisé pour voir les détails.",
+    "medication_ready": "Mise à jour de votre ordonnance. Connectez-vous à votre compte sécurisé pour voir les détails.",
+    "lab_results": "De nouveaux résultats sont disponibles. Connectez-vous à votre compte sécurisé pour voir les détails.",
+    "announcement": "Nouvelle annonce."
+  },
+  "unreadCount_one": "{{count}} notification non lue.",
+  "unreadCount_other": "{{count}} notifications non lues.",
+  "upToDate": "Vous êtes à jour.",
+  "empty": "Aucune notification",
+  "markAllRead": "Tout marquer comme lu",
+  "delete": {
+    "title": "Supprimer cette notification ?",
+    "message": "La notification sera définitivement retirée de votre liste.",
+    "aria": "Supprimer cette notification"
+  }
+}

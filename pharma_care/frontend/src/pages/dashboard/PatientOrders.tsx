@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileText, RefreshCw, ShoppingBag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import PageHeader from "../../components/PageHeader";
 import ErrorBanner from "../../components/ui/ErrorBanner";
 import EmptyState from "../../components/ui/EmptyState";
 import { SkeletonLines } from "../../components/ui/Skeleton";
-import OrderStatusBadge, {
-  ORDER_STATUS_LABELS,
-} from "../../components/ui/OrderStatusBadge";
+import OrderStatusBadge from "../../components/ui/OrderStatusBadge";
 import {
   getOrderPrescriptionUrl,
   getPatientOrders,
@@ -16,6 +15,7 @@ import {
 import type { OrderStatus } from "../../types/patient";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { useAuth } from "../../contexts/AuthContext";
+import { translateApiError } from "../../i18n/apiError";
 
 const FILTERS: ("all" | OrderStatus)[] = [
   "all",
@@ -27,23 +27,23 @@ const FILTERS: ("all" | OrderStatus)[] = [
   "cancelled",
 ];
 
-// Next actions available from each status
-const TRANSITIONS: Record<OrderStatus, { label: string; to: OrderStatus; tone: "primary" | "danger" }[]> = {
+// Next actions available from each status (i18n key + target status + tone)
+const TRANSITIONS: Record<OrderStatus, { labelKey: string; to: OrderStatus; tone: "primary" | "danger" }[]> = {
   pending: [
-    { label: "Approuver", to: "approved", tone: "primary" },
-    { label: "Refuser", to: "cancelled", tone: "danger" },
+    { labelKey: "orders.transitions.approve", to: "approved", tone: "primary" },
+    { labelKey: "orders.transitions.reject", to: "cancelled", tone: "danger" },
   ],
   approved: [
-    { label: "Mettre en préparation", to: "preparing", tone: "primary" },
-    { label: "Annuler", to: "cancelled", tone: "danger" },
+    { labelKey: "orders.transitions.startPreparing", to: "preparing", tone: "primary" },
+    { labelKey: "orders.transitions.cancel", to: "cancelled", tone: "danger" },
   ],
   preparing: [
-    { label: "Prête pour retrait", to: "ready_for_pickup", tone: "primary" },
-    { label: "Annuler", to: "cancelled", tone: "danger" },
+    { labelKey: "orders.transitions.readyForPickup", to: "ready_for_pickup", tone: "primary" },
+    { labelKey: "orders.transitions.cancel", to: "cancelled", tone: "danger" },
   ],
   ready_for_pickup: [
-    { label: "Marquer terminée", to: "completed", tone: "primary" },
-    { label: "Annuler", to: "cancelled", tone: "danger" },
+    { labelKey: "orders.transitions.markCompleted", to: "completed", tone: "primary" },
+    { labelKey: "orders.transitions.cancel", to: "cancelled", tone: "danger" },
   ],
   completed: [],
   cancelled: [],
@@ -51,6 +51,7 @@ const TRANSITIONS: Record<OrderStatus, { label: string; to: OrderStatus; tone: "
 
 export default function PatientOrders() {
   const { pharmacy } = useAuth();
+  const { t } = useTranslation(["dashboard", "common"]);
   const [orders, setOrders] = useState<PharmacyOrder[]>([]);
   const [filter, setFilter] = useState<"all" | OrderStatus>("all");
   const [loading, setLoading] = useState(true);
@@ -63,7 +64,7 @@ export default function PatientOrders() {
     try {
       setOrders(await getPatientOrders());
     } catch (err) {
-      setError((err as Error).message);
+      setError(translateApiError(err, t));
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ export default function PatientOrders() {
   }, [orders]);
 
   async function transition(order: PharmacyOrder, to: OrderStatus) {
-    if (to === "cancelled" && !confirm("Annuler / refuser cette commande ?")) return;
+    if (to === "cancelled" && !confirm(t("dashboard:orders.confirmCancel"))) return;
     setUpdating(order.id);
     try {
       const updated = await updateOrderStatus(order.id, to);
@@ -93,7 +94,7 @@ export default function PatientOrders() {
         list.map((o) => (o.id === order.id ? { ...o, ...updated } : o))
       );
     } catch (err) {
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     } finally {
       setUpdating(null);
     }
@@ -104,7 +105,7 @@ export default function PatientOrders() {
       const { url } = await getOrderPrescriptionUrl(order.id);
       window.open(url, "_blank", "noopener");
     } catch (err) {
-      alert((err as Error).message);
+      alert(translateApiError(err, t));
     }
   }
 
@@ -113,14 +114,14 @@ export default function PatientOrders() {
   return (
     <div>
       <PageHeader
-        title="Commandes Patients"
-        subtitle="Commandes reçues via le portail patient : validation, préparation et retrait."
+        title={t("dashboard:orders.title")}
+        subtitle={t("dashboard:orders.subtitle")}
         action={
           <button
             onClick={load}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
-            <RefreshCw className="h-4 w-4" /> Actualiser
+            <RefreshCw className="h-4 w-4" /> {t("dashboard:orders.refresh")}
           </button>
         }
       />
@@ -137,16 +138,16 @@ export default function PatientOrders() {
               className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${
                 filter === f
                   ? "bg-[#063b1e] text-[#6eff8a] border-[#063b1e]"
-                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
               }`}
             >
-              {f === "all" ? "Toutes" : ORDER_STATUS_LABELS[f]} ({count})
+              {f === "all" ? t("dashboard:orders.filterAll") : t(`common:orderStatus.${f}`)} ({count})
             </button>
           );
         })}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         {loading ? (
           <SkeletonLines lines={6} />
         ) : filtered.length === 0 ? (
@@ -154,75 +155,77 @@ export default function PatientOrders() {
             icon={<ShoppingBag className="h-6 w-6" />}
             title={
               filter === "all"
-                ? "Aucune commande reçue"
-                : `Aucune commande « ${ORDER_STATUS_LABELS[filter as OrderStatus]} »`
+                ? t("dashboard:orders.empty")
+                : t("dashboard:orders.emptyFiltered", { status: t(`common:orderStatus.${filter}`) })
             }
-            hint="Les commandes passées par les patients apparaîtront ici."
+            hint={t("dashboard:orders.emptyHint")}
           />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-slate-100 dark:divide-slate-700">
             {filtered.map((o) => (
               <li key={o.id} className="p-4 sm:p-5">
                 <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap mb-1">
-                      <p className="text-sm font-bold text-slate-900">{o.patient_name}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{o.patient_name}</p>
                       <OrderStatusBadge status={o.status} />
                       {o.prescription_path && (
                         <button
                           onClick={() => openPrescription(o)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
                         >
-                          <FileText className="h-3.5 w-3.5" /> Voir l'ordonnance
+                          <FileText className="h-3.5 w-3.5" /> {t("dashboard:orders.viewPrescription")}
                         </button>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500">
-                      Reçue le {formatDate(o.created_at)} — mise à jour le{" "}
-                      {formatDate(o.updated_at)}
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t("dashboard:orders.received", {
+                        date: formatDate(o.created_at),
+                        updated: formatDate(o.updated_at),
+                      })}
                     </p>
                     {o.items.length > 0 ? (
-                      <ul className="mt-2 text-sm text-slate-700 space-y-0.5">
+                      <ul className="mt-2 text-sm text-slate-700 dark:text-slate-300 space-y-0.5">
                         {o.items.map((it, i) => (
                           <li key={i} className="flex justify-between gap-3 max-w-md">
                             <span>
-                              {it.name || "Article"} ×{it.quantity}
+                              {it.name || t("dashboard:orders.item")} ×{it.quantity}
                             </span>
-                            <span className="text-slate-500">
+                            <span className="text-slate-500 dark:text-slate-400">
                               {formatCurrency((it.unit_price || 0) * it.quantity, currency)}
                             </span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="mt-2 text-sm text-slate-500 italic">
-                        Commande sur ordonnance uniquement
+                      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 italic">
+                        {t("dashboard:orders.prescriptionOnly")}
                       </p>
                     )}
                     {o.notes && (
-                      <p className="mt-2 text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 max-w-md">
-                        Note du patient : {o.notes}
+                      <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700 rounded-lg px-3 py-2 max-w-md">
+                        {t("dashboard:orders.patientNote", { note: o.notes })}
                       </p>
                     )}
                   </div>
 
                   <div className="flex flex-col items-start lg:items-end gap-2 shrink-0">
-                    <p className="text-base font-bold text-slate-900">
+                    <p className="text-base font-bold text-slate-900 dark:text-slate-100">
                       {formatCurrency(o.total, currency)}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {TRANSITIONS[o.status].map((t) => (
+                      {TRANSITIONS[o.status].map((tr) => (
                         <button
-                          key={t.to + t.label}
+                          key={tr.to + tr.labelKey}
                           disabled={updating === o.id}
-                          onClick={() => transition(o, t.to)}
+                          onClick={() => transition(o, tr.to)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${
-                            t.tone === "primary"
+                            tr.tone === "primary"
                               ? "bg-[#063b1e] text-[#6eff8a] hover:bg-black"
-                              : "border border-red-200 text-red-700 hover:bg-red-50"
+                              : "border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                           }`}
                         >
-                          {t.label}
+                          {t(`dashboard:${tr.labelKey}`)}
                         </button>
                       ))}
                     </div>

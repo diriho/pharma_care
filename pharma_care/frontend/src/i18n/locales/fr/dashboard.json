@@ -1,0 +1,259 @@
+{
+  "nav": {
+    "overview": "Tableau de Bord",
+    "pos": "Caisse (POS)",
+    "inventory": "Inventaire Médicaments",
+    "patients": "Patients & Clients",
+    "orders": "Commandes Patients",
+    "messages": "Messages",
+    "suppliers": "Fournisseurs",
+    "analytics": "Analyses",
+    "settings": "Profile"
+  },
+  "defaultPharmacyName": "Gestion Pharmacie",
+  "deleteAccount": {
+    "title": "Supprimer définitivement votre compte ?",
+    "message": "Cette action supprimera toutes vos données (inventaire, ventes, patients, fournisseurs). Cette opération est irréversible.",
+    "confirm": "Supprimer définitivement"
+  },
+  "search": {
+    "placeholder": "Rechercher une page…",
+    "goTo": "Aller à {{page}}",
+    "noResults": "Aucune page trouvée",
+    "home": "Accueil"
+  },
+  "orders": {
+    "title": "Commandes Patients",
+    "subtitle": "Commandes reçues via le portail patient : validation, préparation et retrait.",
+    "refresh": "Actualiser",
+    "filterAll": "Toutes",
+    "empty": "Aucune commande reçue",
+    "emptyFiltered": "Aucune commande « {{status}} »",
+    "emptyHint": "Les commandes passées par les patients apparaîtront ici.",
+    "viewPrescription": "Voir l'ordonnance",
+    "received": "Reçue le {{date}} — mise à jour le {{updated}}",
+    "item": "Article",
+    "prescriptionOnly": "Commande sur ordonnance uniquement",
+    "patientNote": "Note du patient : {{note}}",
+    "confirmCancel": "Annuler / refuser cette commande ?",
+    "transitions": {
+      "approve": "Approuver",
+      "reject": "Refuser",
+      "startPreparing": "Mettre en préparation",
+      "cancel": "Annuler",
+      "readyForPickup": "Prête pour retrait",
+      "markCompleted": "Marquer terminée"
+    }
+  },
+  "overview": {
+    "welcome": "Bienvenue, {{name}}",
+    "defaultName": "Pharmacie",
+    "subtitle": "Vue d'ensemble en temps réel de votre officine.",
+    "stats": {
+      "medicines": "Médicaments en catalogue",
+      "patients": "Patients & Clients",
+      "suppliers": "Fournisseurs",
+      "sales": "Ventes enregistrées",
+      "ordersTotal": "Commandes totales",
+      "ordersPending": "Commandes en attente",
+      "ordersCompleted": "Commandes terminées",
+      "activeConversations": "Conversations actives (30 j)"
+    },
+    "revenue": "Chiffre d'affaires",
+    "stockValuePurchase": "Valeur du stock (achat)",
+    "stockValueSelling": "Valeur du stock (vente)",
+    "recentAlerts": "Alertes récentes",
+    "noAlerts": "Aucune alerte. Vos stocks et péremptions sont sous contrôle.",
+    "ratings": {
+      "title": "Évaluations de la pharmacie",
+      "empty": "Aucune évaluation reçue",
+      "emptyHint": "Les notes laissées par vos patients apparaîtront ici.",
+      "totalReviews_one": "{{count}} avis au total",
+      "totalReviews_other": "{{count}} avis au total",
+      "byMonth": "Note moyenne par mois"
+    },
+    "recentReviews": {
+      "title": "Avis récents",
+      "empty": "Pas encore d'avis",
+      "emptyHint": "Les commentaires de vos patients apparaîtront ici."
+    }
+  },
+  "pos": {
+    "title": "Point de Vente",
+    "subtitle": "Enregistrez les ventes en quelques clics. Le stock est mis à jour automatiquement.",
+    "searchPlaceholder": "Rechercher un médicament…",
+    "noResults": "Aucun médicament en stock pour cette recherche.",
+    "cart": "Panier ({{count}})",
+    "cartEmpty": "Aucun article.",
+    "patientOptional": "Patient (optionnel)",
+    "walkInCustomer": "Client de passage",
+    "payment": "Paiement",
+    "paymentMethods": {
+      "cash": "Espèces",
+      "mobile": "Mobile Money",
+      "card": "Carte",
+      "insurance": "Assurance"
+    },
+    "checkout": "Valider la vente",
+    "saleConfirmed": "Vente enregistrée — {{amount}}",
+    "stock": "Stock : {{count}}"
+  },
+  "inventory": {
+    "title": "Inventaire des médicaments",
+    "subtitle": "Suivi des stocks, lots, péremptions et tarification.",
+    "addMedicine": "Ajouter un médicament",
+    "searchPlaceholder": "Rechercher (nom, molécule, catégorie, lot)…",
+    "empty": "Aucun médicament. Commencez par en ajouter un.",
+    "columns": {
+      "medicine": "Médicament",
+      "category": "Catégorie",
+      "stock": "Stock",
+      "purchasePrice": "PA",
+      "sellingPrice": "PV",
+      "expiry": "Péremption"
+    },
+    "modal": {
+      "editTitle": "Modifier le médicament",
+      "addTitle": "Ajouter un médicament",
+      "fields": {
+        "name": "Nom",
+        "category": "Catégorie",
+        "dosage": "Dosage",
+        "molecule": "Molécule",
+        "initialStock": "Stock initial",
+        "lowStockThreshold": "Seuil stock bas",
+        "purchasePrice": "Prix d'achat",
+        "sellingPrice": "Prix de vente",
+        "batchNumber": "N° de lot",
+        "expiryDate": "Date de péremption",
+        "shelfLocation": "Emplacement (rayon)",
+        "supplier": "Fournisseur",
+        "description": "Description"
+      }
+    },
+    "confirmDelete": "Supprimer ce médicament ?"
+  },
+  "patients": {
+    "title": "Patients & Clients",
+    "subtitle": "Base de données patients avec coordonnées et notes cliniques.",
+    "addPatient": "Ajouter un patient",
+    "empty": "Aucun patient enregistré.",
+    "columns": {
+      "name": "Nom",
+      "phone": "Téléphone",
+      "email": "Email",
+      "dateOfBirth": "Date de naissance",
+      "allergies": "Allergies"
+    },
+    "modal": {
+      "editTitle": "Modifier le patient",
+      "addTitle": "Ajouter un patient",
+      "fields": {
+        "fullName": "Nom complet",
+        "phone": "Téléphone",
+        "email": "Email",
+        "dateOfBirth": "Date de naissance",
+        "gender": "Genre",
+        "address": "Adresse",
+        "allergies": "Allergies",
+        "notes": "Notes"
+      },
+      "genderOptions": {
+        "female": "Féminin",
+        "male": "Masculin",
+        "other": "Autre"
+      }
+    },
+    "confirmDelete": "Supprimer ce patient ?"
+  },
+  "suppliers": {
+    "title": "Fournisseurs & Approvisionnements",
+    "subtitle": "Gérez vos partenaires et passez des commandes de réapprovisionnement.",
+    "addSupplier": "Ajouter un fournisseur",
+    "suppliersSection": "Fournisseurs",
+    "noSuppliers": "Aucun fournisseur.",
+    "newOrder": "Nouvelle commande",
+    "unknownSupplier": "Fournisseur inconnu",
+    "restockOrders": "Commandes d'approvisionnement",
+    "noOrders": "Aucune commande enregistrée.",
+    "orderSummary_one": "{{count}} ligne · créée le {{date}}",
+    "orderSummary_other": "{{count}} lignes · créée le {{date}}",
+    "received": "Reçue",
+    "markReceived": "Marquer reçue",
+    "confirmDeleteSupplier": "Supprimer ce fournisseur ?",
+    "confirmReceive": "Marquer cette commande comme reçue ? Les stocks seront incrémentés.",
+    "modal": {
+      "editTitle": "Modifier le fournisseur",
+      "addTitle": "Ajouter un fournisseur",
+      "fields": {
+        "name": "Nom",
+        "contact": "Contact",
+        "phone": "Téléphone",
+        "email": "Email",
+        "address": "Adresse",
+        "categories": "Catégories (séparées par des virgules)"
+      }
+    },
+    "orderModal": {
+      "title": "Nouvelle commande",
+      "hint": "Sélectionnez les médicaments et quantités. Le stock sera incrémenté à la réception.",
+      "addMedicine": "Ajouter un médicament…",
+      "createOrder": "Créer la commande"
+    }
+  },
+  "analytics": {
+    "title": "Analyses & Rapports",
+    "subtitle": "Indicateurs clés et tendances commerciales de votre pharmacie.",
+    "loadError": "Erreur de chargement des analyses : {{message}}",
+    "dataUnavailable": "données indisponibles",
+    "kpi": {
+      "totalRevenue": "CA total",
+      "stockValuePurchase": "Valeur stock (achat)",
+      "stockValueSelling": "Valeur stock (vente)",
+      "totalSales": "Ventes totales"
+    },
+    "salesByDay": {
+      "title": "Ventes par jour",
+      "empty": "Aucune vente enregistrée."
+    },
+    "topMedicines": {
+      "title": "Médicaments les plus vendus",
+      "empty": "Pas encore de données."
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitle": "Répondez aux questions de vos patients en toute sécurité.",
+    "empty": "Aucune conversation",
+    "emptyHint": "Les conversations démarrées par vos patients apparaîtront ici."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "emptyHint": "Les nouvelles commandes, évaluations et messages de vos patients apparaîtront ici.",
+    "alerts": {
+      "title": "Alertes stock & péremption",
+      "empty": "Aucune alerte. Vos stocks et péremptions sont sous contrôle."
+    }
+  },
+  "charts": {
+    "ratingTrend": {
+      "ariaLabel": "Évolution de la note moyenne par mois",
+      "reviewCount_one": "({{count}} avis)",
+      "reviewCount_other": "({{count}} avis)"
+    },
+    "weeklyVolume": {
+      "title": "Volume Hebdomadaire de Patients",
+      "subtitle": "Patients servis sur les 7 derniers jours",
+      "totalBadge_one": "{{count}} patient",
+      "totalBadge_other": "{{count}} patients",
+      "loadingAria": "Chargement du volume de patients",
+      "emptyTitle": "Aucune donnée cette semaine",
+      "emptyHint": "Le volume de patients apparaîtra ici dès les premières visites enregistrées.",
+      "tooltipPatients_one": "{{count}} patient",
+      "tooltipPatients_other": "{{count}} patients",
+      "tableCaption": "Volume de patients par jour sur les 7 derniers jours",
+      "tableDay": "Jour",
+      "tablePatients": "Patients"
+    }
+  }
+}
