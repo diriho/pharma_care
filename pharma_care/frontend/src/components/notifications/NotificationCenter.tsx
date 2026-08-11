@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 import PageHeader from "../PageHeader";
 import ErrorBanner from "../ui/ErrorBanner";
 import EmptyState from "../ui/EmptyState";
-import ConfirmDialog from "../ui/ConfirmDialog";
 import { SkeletonLines } from "../ui/Skeleton";
 import { useRealtimeTable } from "../../hooks/useRealtimeTable";
 import type { PatientNotification } from "../../types/patient";
@@ -87,8 +86,7 @@ export default function NotificationCenter({
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [confirmTarget, setConfirmTarget] = useState<PatientNotification | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -144,17 +142,15 @@ export default function NotificationCenter({
 
   async function handleDelete(n: PatientNotification) {
     if (!adapter.remove) return;
-    setDeleting(true);
+    setDeletingId(n.id);
     try {
       await adapter.remove(n.id);
       setItems((list) => list.filter((it) => it.id !== n.id));
       if (!n.read_at) setUnread((u) => Math.max(0, u - 1));
-      setConfirmTarget(null);
     } catch (err) {
-      setConfirmTarget(null);
       alert(translateApiError(err, t));
     } finally {
-      setDeleting(false);
+      setDeletingId(null);
     }
   }
 
@@ -226,8 +222,9 @@ export default function NotificationCenter({
                 </button>
                 {adapter.remove && (
                   <button
-                    onClick={() => setConfirmTarget(n)}
-                    className="mt-4 p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shrink-0"
+                    onClick={() => handleDelete(n)}
+                    disabled={deletingId === n.id}
+                    className="mt-4 p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shrink-0 disabled:opacity-50"
                     aria-label={t("notifications:delete.aria")}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -238,15 +235,6 @@ export default function NotificationCenter({
           </ul>
         )}
       </div>
-
-      <ConfirmDialog
-        open={Boolean(confirmTarget)}
-        title={t("notifications:delete.title")}
-        message={t("notifications:delete.message")}
-        busy={deleting}
-        onConfirm={() => confirmTarget && handleDelete(confirmTarget)}
-        onCancel={() => setConfirmTarget(null)}
-      />
     </div>
   );
 }

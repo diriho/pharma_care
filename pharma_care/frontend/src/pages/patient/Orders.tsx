@@ -68,7 +68,6 @@ export default function Orders() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t("patient:orders.confirmDelete"))) return;
     try {
       await deleteOrder(id);
       await load();

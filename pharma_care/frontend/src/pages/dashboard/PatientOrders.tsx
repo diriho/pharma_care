@@ -102,7 +102,6 @@ export default function PatientOrders() {
   }
 
   async function handleDelete(order: PharmacyOrder) {
-    if (!confirm(t("dashboard:orders.confirmDelete"))) return;
     setUpdating(order.id);
     try {
       await deletePatientOrder(order.id);
