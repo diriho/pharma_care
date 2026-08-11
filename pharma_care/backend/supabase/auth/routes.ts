@@ -251,6 +251,98 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
   return res.json({ user, role, pharmacy: data || null, patientProfile: null });
 });
 
+// Called right after a GitHub OAuth redirect completes. A first-time OAuth
+// sign-in has a valid session but no role in app_metadata and no profile row
+// (unlike email/password signup, which sets both atomically server-side
+// before ever returning a session). This assigns the role once (from the
+// caller's intent, if this is genuinely the first time) and reports whether
+// a profile row still needs to be filled in.
+router.post("/oauth/finish", requireAuth, async (req: Request, res: Response) => {
+  const user = (req as AuthedRequest).user;
+  const intent = req.body?.intent;
+  const rawRole = (user.app_metadata as Record<string, unknown> | null)?.role;
+
+  let role: "patient" | "facility_admin" | null = null;
+  if (rawRole === "patient" || rawRole === "facility_admin") {
+    role = rawRole;
+  } else if (intent === "patient" || intent === "pharmacy") {
+    role = intent === "patient" ? "patient" : "facility_admin";
+    const { error: roleError } = await admin.auth.admin.updateUserById(user.id, {
+      app_metadata: { ...(user.app_metadata || {}), role },
+    });
+    if (roleError) {
+      return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", roleError);
+    }
+  }
+
+  if (!role) {
+    return res.json({ role: null, profileComplete: false });
+  }
+
+  const table = role === "patient" ? "patient_profiles" : "pharmacy_settings";
+  const { data, error } = await admin.from(table).select("user_id").eq("user_id", user.id).single();
+  if (error && error.code !== "PGRST116") {
+    return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", error);
+  }
+  return res.json({ role, profileComplete: !!data });
+});
+
+// Creates the missing pharmacy_settings/patient_profiles row for a user who
+// signed in via GitHub OAuth (role already assigned by /oauth/finish).
+router.post("/oauth/profile", requireAuth, async (req: Request, res: Response) => {
+  const { user, role } = req as AuthedRequest;
+  const table = role === "patient" ? "patient_profiles" : "pharmacy_settings";
+  const { data: existing } = await admin.from(table).select("user_id").eq("user_id", user.id).single();
+  if (existing) {
+    return authError(res, 400, "PROFILE_EXISTS", "Profil déjà complété");
+  }
+
+  if (role === "patient") {
+    const p = (req.body?.profile as PatientProfilePayload) || {};
+    if (!p.fullName || !String(p.fullName).trim()) {
+      return authError(res, 400, "VALIDATION_ERROR", "Nom complet requis");
+    }
+    const { data, error } = await admin
+      .from("patient_profiles")
+      .insert({
+        user_id: user.id,
+        full_name: String(p.fullName).trim(),
+        phone: p.phone || null,
+        date_of_birth: p.dateOfBirth || null,
+        gender: p.gender || null,
+        address: p.address || null,
+        allergies: p.allergies || null,
+      })
+      .select()
+      .single();
+    if (error) return authError(res, 500, "SERVER_ERROR", "Échec de la création du profil patient", error);
+    return res.json(data);
+  }
+
+  const pharmacy = (req.body?.pharmacy as PharmacyPayload) || {};
+  const validationError = validatePharmacy(pharmacy);
+  if (validationError) return authError(res, 400, "VALIDATION_ERROR", validationError);
+
+  const { error: settingsError } = await admin.rpc("create_pharmacy_settings", {
+    p_user_id: user.id,
+    p_name: pharmacy.name,
+    p_address: pharmacy.address,
+    p_commune: pharmacy.commune,
+    p_province: pharmacy.province,
+    p_phone: pharmacy.phone,
+    p_currency: pharmacy.currency || "FBU",
+    p_nif: pharmacy.nif || null,
+    p_rc: pharmacy.rc || null,
+    p_expiry_alert_months: Number(pharmacy.expiryAlertMonths),
+    p_low_stock_alert_level: Number(pharmacy.lowStockAlertLevel),
+  });
+  if (settingsError) {
+    return authError(res, 500, "SERVER_ERROR", "Échec de la création du profil pharmacie", settingsError);
+  }
+  const { data } = await admin.from("pharmacy_settings").select("*").eq("user_id", user.id).single();
+  return res.json(data);
+});
+
 // route to delete the user account and all associated data
 router.delete("/account", requireAuth, async (req: Request, res: Response) => {
   const userId = (req as AuthedRequest).user.id;
@@ -263,12 +355,22 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
     "notifications",
     "pharmacy_settings",
     "patient_profiles",
-    "patient_medications",
   ];
   // iterate over the tables and delete all rows where user_id matches
   for (const t of tables) {
     await admin.from(t).delete().eq("user_id", userId);
   }
+  // patient_medications is keyed by patient_user_id, not user_id
+  await admin.from("patient_medications").delete().eq("patient_user_id", userId);
+
+  // Prescription uploads live in storage, not a table, so FK cascade never
+  // touches them — remove anything under this user's prefix before the
+  // account (and the medication_orders rows referencing it) is gone.
+  const { data: files } = await admin.storage.from("prescriptions").list(userId);
+  if (files && files.length > 0) {
+    await admin.storage.from("prescriptions").remove(files.map((f) => `${userId}/${f.name}`));
+  }
+
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", error);
   return res.json({ ok: true });

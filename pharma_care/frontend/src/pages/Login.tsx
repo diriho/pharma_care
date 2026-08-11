@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Github } from "lucide-react";
 import { homePathForRole, useAuth } from "../contexts/AuthContext";
 import RoleToggle, { type AccountType } from "../components/ui/RoleToggle";
 import { translateApiError } from "../i18n/apiError";
@@ -8,7 +9,7 @@ import { ThemeToggleButton } from "../components/ui/ThemeToggle";
 import { LanguageSwitcherButton } from "../components/ui/LanguageSwitcher";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginWithGitHub } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation(["auth", "common"]);
   const [accountType, setAccountType] = useState<AccountType>("pharmacy");
@@ -32,6 +33,15 @@ export default function Login() {
       setError(translateApiError(err, t));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function onGitHubClick() {
+    setError(null);
+    try {
+      await loginWithGitHub(accountType);
+    } catch (err) {
+      setError(translateApiError(err, t));
     }
   }
 
@@ -77,6 +87,23 @@ export default function Login() {
               setError(null);
             }}
           />
+
+          <button
+            type="button"
+            onClick={onGitHubClick}
+            className="w-full flex items-center justify-center gap-2 py-2.5 mb-5 rounded-lg border border-[#e4e4e7] dark:border-slate-600 text-sm font-semibold text-[#3f3f46] dark:text-slate-200 hover:bg-[#f4f4f5] dark:hover:bg-slate-700 transition-colors"
+          >
+            <Github className="h-4 w-4" />
+            {t("auth:login.continueWithGithub")}
+          </button>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-px flex-1 bg-[#e4e4e7] dark:bg-slate-700" />
+            <span className="text-xs font-medium text-[#a1a1aa] dark:text-slate-500">
+              {t("auth:orDivider")}
+            </span>
+            <div className="h-px flex-1 bg-[#e4e4e7] dark:bg-slate-700" />
+          </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div>

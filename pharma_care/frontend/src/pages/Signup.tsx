@@ -1,113 +1,32 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
+import { Github } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import RoleToggle, { type AccountType } from "../components/ui/RoleToggle";
 import { translateApiError } from "../i18n/apiError";
 import { ThemeToggleButton } from "../components/ui/ThemeToggle";
 import { LanguageSwitcherButton } from "../components/ui/LanguageSwitcher";
+import {
+  PHARMACY_FIELDS,
+  PHARMACY_INITIAL,
+  PATIENT_FIELDS_INITIAL,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  fieldLabel,
+  type PharmacyFormState,
+} from "./signupFields";
 
-type Field = {
-  key: keyof FormState;
-  labelKey: string;
-  required?: boolean;
-  type?: string;
-  placeholderKey?: string;
-  hintKey?: string;
-};
+type FormState = { email: string; password: string } & PharmacyFormState;
 
-type FormState = {
-  email: string;
-  password: string;
-  name: string;
-  address: string;
-  commune: string;
-  province: string;
-  phone: string;
-  currency: string;
-  nif: string;
-  rc: string;
-  expiryAlertMonths: string;
-  lowStockAlertLevel: string;
-};
+const INITIAL: FormState = { email: "", password: "", ...PHARMACY_INITIAL };
 
-const INITIAL: FormState = {
-  email: "",
-  password: "",
-  name: "",
-  address: "",
-  commune: "",
-  province: "",
-  phone: "",
-  currency: "FBU",
-  nif: "",
-  rc: "",
-  expiryAlertMonths: "6",
-  lowStockAlertLevel: "15",
-};
+type PatientFormState = { email: string; password: string } & typeof PATIENT_FIELDS_INITIAL;
 
-const PHARMACY_FIELDS: Field[] = [
-  { key: "name", labelKey: "fields.pharmacyName", required: true, placeholderKey: "fields.pharmacyNamePlaceholder" },
-  { key: "address", labelKey: "fields.address", required: true, placeholderKey: "fields.addressPlaceholder" },
-  { key: "commune", labelKey: "fields.commune", required: true, placeholderKey: "fields.communePlaceholder" },
-  { key: "province", labelKey: "fields.province", required: true, placeholderKey: "fields.provincePlaceholder" },
-  { key: "phone", labelKey: "fields.phone", required: true, placeholderKey: "fields.phonePlaceholder" },
-  {
-    key: "currency",
-    labelKey: "fields.currency",
-    required: true,
-    placeholderKey: "fields.currencyPlaceholder",
-    hintKey: "fields.currencyHint",
-  },
-  { key: "nif", labelKey: "fields.nif", placeholderKey: "fields.optionalPlaceholder" },
-  { key: "rc", labelKey: "fields.rc", placeholderKey: "fields.optionalPlaceholder" },
-  {
-    key: "expiryAlertMonths",
-    labelKey: "fields.expiryAlertMonths",
-    required: true,
-    type: "number",
-  },
-  {
-    key: "lowStockAlertLevel",
-    labelKey: "fields.lowStockAlertLevel",
-    required: true,
-    type: "number",
-  },
-];
-
-type PatientFormState = {
-  email: string;
-  password: string;
-  fullName: string;
-  phone: string;
-  dateOfBirth: string;
-  gender: string;
-  address: string;
-  allergies: string;
-};
-
-const PATIENT_INITIAL: PatientFormState = {
-  email: "",
-  password: "",
-  fullName: "",
-  phone: "",
-  dateOfBirth: "",
-  gender: "",
-  address: "",
-  allergies: "",
-};
-
-const INPUT_CLASS =
-  "w-full px-4 py-2.5 rounded-lg border border-[#e4e4e7] dark:border-slate-600 bg-white dark:bg-slate-900 text-[#0f172a] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#063b1e] dark:focus:ring-[#6eff8a]";
-const LABEL_CLASS = "block text-sm font-semibold text-[#3f3f46] dark:text-slate-300 mb-1.5";
-
-function fieldLabel(t: TFunction, key: string) {
-  return t(`auth:${key}`);
-}
+const PATIENT_INITIAL: PatientFormState = { email: "", password: "", ...PATIENT_FIELDS_INITIAL };
 
 export default function Signup() {
-  const { signup, signupPatient } = useAuth();
+  const { signup, signupPatient, loginWithGitHub } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation(["auth", "common"]);
   const [accountType, setAccountType] = useState<AccountType>("pharmacy");
@@ -115,6 +34,15 @@ export default function Signup() {
   const [patientForm, setPatientForm] = useState<PatientFormState>(PATIENT_INITIAL);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  async function onGitHubClick() {
+    setError(null);
+    try {
+      await loginWithGitHub(accountType);
+    } catch (err) {
+      setError(translateApiError(err, t));
+    }
+  }
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((s) => ({ ...s, [key]: value }));
@@ -223,6 +151,23 @@ export default function Signup() {
               setError(null);
             }}
           />
+
+          <button
+            type="button"
+            onClick={onGitHubClick}
+            className="w-full flex items-center justify-center gap-2 py-2.5 mb-5 rounded-lg border border-[#e4e4e7] dark:border-slate-600 text-sm font-semibold text-[#3f3f46] dark:text-slate-200 hover:bg-[#f4f4f5] dark:hover:bg-slate-700 transition-colors"
+          >
+            <Github className="h-4 w-4" />
+            {t("auth:signup.continueWithGithub")}
+          </button>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-px flex-1 bg-[#e4e4e7] dark:bg-slate-700" />
+            <span className="text-xs font-medium text-[#a1a1aa] dark:text-slate-500">
+              {t("auth:orDivider")}
+            </span>
+            <div className="h-px flex-1 bg-[#e4e4e7] dark:bg-slate-700" />
+          </div>
 
           {accountType === "patient" ? (
             <form onSubmit={onSubmitPatient} className="space-y-5">

@@ -95,6 +95,7 @@ type AuthContextValue = {
   ) => Promise<UserRole>;
   signup: (payload: SignupPayload) => Promise<void>;
   signupPatient: (payload: PatientSignupPayload) => Promise<void>;
+  loginWithGitHub: (intent?: "patient" | "pharmacy") => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   refreshPharmacy: () => Promise<void>;
@@ -256,6 +257,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const loginWithGitHub = useCallback(async (intent?: "patient" | "pharmacy") => {
+    const redirectTo = `${window.location.origin}/oauth/callback${intent ? `?intent=${intent}` : ""}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: { redirectTo },
+    });
+    if (error) throw new ApiError(error.message, "OAUTH_FAILED");
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api("/auth/logout", { method: "POST" });
@@ -287,11 +297,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       signup,
       signupPatient,
+      loginWithGitHub,
       logout,
       deleteAccount,
       refreshPharmacy: loadPharmacy,
     }),
-    [loading, session, pharmacy, patientProfile, pharmacyLoading, pharmacyError, login, signup, signupPatient, logout, deleteAccount, loadPharmacy]
+    [loading, session, pharmacy, patientProfile, pharmacyLoading, pharmacyError, login, signup, signupPatient, loginWithGitHub, logout, deleteAccount, loadPharmacy]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

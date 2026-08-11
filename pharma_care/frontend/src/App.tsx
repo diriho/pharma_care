@@ -8,6 +8,8 @@ import {
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import OAuthCallback from "./pages/OAuthCallback";
+import CompleteProfile from "./pages/CompleteProfile";
 import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/Overview";
 import InventoryPage from "./pages/dashboard/Inventory";
@@ -86,6 +88,11 @@ export default function App() {
               </PublicOnly>
             }
           />
+          {/* Not gated by ProtectedRoute/PublicOnly: a first-time GitHub
+              sign-in has a session but no role/profile yet, so neither
+              guard's assumptions hold until /oauth/finish resolves. */}
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
+          <Route path="/onboarding" element={<CompleteProfile />} />
           <Route
             path="/dashboard"
             element={
