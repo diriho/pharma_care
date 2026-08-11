@@ -59,7 +59,7 @@ Visit http://localhost:5173 — sign up to create a pharmacy, then explore the d
 - **Landing page** — services overview (POS, inventory, patients, suppliers, analytics, alerts) with Pharma Core branding.
 - **Signup / Login** — collects all pharmacy onboarding fields (Nom, Adresse, Commune, Province, Téléphone, Devise FBU, NIF, RC, alertes).
 - **Dashboard** — per-pharmacy isolated tables for POS, inventory, patients, suppliers, and restock orders. Stocks update live on sale and reception.
-- <img src="./DEMO/demo1.png" alt="Login page" width="600" height="400">
+- <img src="./DEMO/demo1.png" alt="Login page" width="300" height="500">
 - **Alerts** — backend computes low-stock and expiring-soon alerts from your seuils; surfaced in the dashboard bell.
 - **JSON export** — full history download from the sidebar or settings page.
 - **Logout & Delete account** — both available from the dashboard sidebar.
