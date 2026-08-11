@@ -66,7 +66,8 @@ Visit http://localhost:5173 — sign up to create a pharmacy, then explore the d
 - **JSON export** — full history download from the sidebar or settings page.
 - **Logout & Delete account** — both available from the dashboard sidebar.
 - **Language switch** - french and English both available 
-- **Dark/Light Mode** - pages nigth mode integration
+- **Dark/Light Mode** - pages night mode integration
+
 ![Notification Bar](DEMO/demo6.png)
 
 
