@@ -219,6 +219,14 @@ router.post("/restock-orders/:id/receive", async (req: Request, res: Response) =
         p_quantity: line.quantity,
         p_user: userId,
       });
+      // Update cost basis to the price actually paid on this restock, so stock value stays accurate
+      if (Number.isFinite(line.unit_cost) && (line.unit_cost as number) > 0) {
+        await admin
+          .from("medicines")
+          .update({ purchase_price: line.unit_cost })
+          .eq("id", line.medicine_id)
+          .eq("user_id", userId);
+      }
     }
     const { data, error } = await admin
       .from("restock_orders")
