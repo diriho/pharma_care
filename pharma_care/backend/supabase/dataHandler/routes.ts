@@ -577,6 +577,17 @@ router.put("/patient-orders/:id/status", async (req: Request, res: Response) => 
       .single();
     if (!order) return res.status(404).json({ error: "Commande introuvable" });
 
+    // Reflect the order in pharmacy stock exactly once, on the transition into "completed"
+    if (status === "completed" && order.status !== "completed") {
+      for (const item of (order.items || []) as OrderLine[]) {
+        await admin.rpc("decrement_medicine_stock", {
+          p_medicine_id: item.medicine_id,
+          p_quantity: item.quantity,
+          p_user: userId,
+        });
+      }
+    }
+
     const { data, error } = await admin
       .from("medication_orders")
       .update({ status, updated_at: new Date().toISOString() })
