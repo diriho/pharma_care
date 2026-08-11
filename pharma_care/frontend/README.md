@@ -2,6 +2,8 @@
 
 React + Vite + TypeScript + Tailwind. Talks to the Express backend via the `/api` proxy.
 
+## Description
+
 ## Setup
 
 ```bash
