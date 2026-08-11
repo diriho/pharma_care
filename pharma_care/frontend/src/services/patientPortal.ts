@@ -75,6 +75,12 @@ export function cancelOrder(orderId: string) {
   });
 }
 
+export function deleteOrder(orderId: string) {
+  return api<{ ok: true }>(`/patient/orders/${orderId}`, {
+    method: "DELETE",
+  });
+}
+
 export function getOrderPrescriptionUrl(orderId: string) {
   return api<{ url: string }>(`/patient/orders/${orderId}/prescription`);
 }

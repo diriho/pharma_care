@@ -36,6 +36,7 @@
     "prescriptionOnly": "Prescription-only order",
     "patientNote": "Patient note: {{note}}",
     "confirmCancel": "Cancel / reject this order?",
+    "confirmDelete": "Delete this order from your list?",
     "transitions": {
       "approve": "Approve",
       "reject": "Reject",

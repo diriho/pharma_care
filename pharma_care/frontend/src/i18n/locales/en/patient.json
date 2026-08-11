@@ -122,6 +122,7 @@
     "subtitle": "Order your medications and track their preparation.",
     "newOrder": "New order",
     "confirmCancel": "Cancel this order?",
+    "confirmDelete": "Delete this order from your history?",
     "emptyTitle": "No orders",
     "emptyHint": "Create your first order from a nearby pharmacy.",
     "viewPrescription": "View prescription",

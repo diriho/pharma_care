@@ -122,6 +122,7 @@
     "subtitle": "Commandez vos médicaments et suivez leur préparation.",
     "newOrder": "Nouvelle commande",
     "confirmCancel": "Annuler cette commande ?",
+    "confirmDelete": "Supprimer cette commande de votre historique ?",
     "emptyTitle": "Aucune commande",
     "emptyHint": "Créez votre première commande auprès d'une pharmacie proche.",
     "viewPrescription": "Voir l'ordonnance",

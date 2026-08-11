@@ -185,6 +185,7 @@ router.get("/orders", async (req: Request, res: Response) => {
       .from("medication_orders")
       .select("*")
       .eq("patient_user_id", userId)
+      .is("patient_deleted_at", null)
       .order("created_at", { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
 
@@ -342,6 +343,35 @@ router.post("/orders/:id/cancel", async (req: Request, res: Response) => {
       status: "cancelled",
     });
     res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
+  }
+});
+
+// Remove a finished order from the patient's own history (soft delete — the
+// pharmacy's copy of the same order is unaffected, see migration 005)
+router.delete("/orders/:id", async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthedRequest).user.id;
+    const { data: order } = await admin
+      .from("medication_orders")
+      .select("status")
+      .eq("id", req.params.id)
+      .eq("patient_user_id", userId)
+      .single();
+    if (!order) return res.status(404).json({ error: "Commande introuvable" });
+    if (!["completed", "cancelled"].includes(order.status)) {
+      return res
+        .status(400)
+        .json({ error: "Seules les commandes terminées ou annulées peuvent être supprimées" });
+    }
+    const { error } = await admin
+      .from("medication_orders")
+      .update({ patient_deleted_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .eq("patient_user_id", userId);
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message || "Erreur serveur" });
   }

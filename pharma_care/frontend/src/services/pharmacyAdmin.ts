@@ -51,6 +51,12 @@ export function updateOrderStatus(orderId: string, status: OrderStatus) {
   });
 }
 
+export function deletePatientOrder(orderId: string) {
+  return api<{ ok: true }>(`/data/patient-orders/${orderId}`, {
+    method: "DELETE",
+  });
+}
+
 export function getOrderPrescriptionUrl(orderId: string) {
   return api<{ url: string }>(`/data/patient-orders/${orderId}/prescription`);
 }

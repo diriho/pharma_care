@@ -10,6 +10,7 @@ import OrderStatusBadge from "../../components/ui/OrderStatusBadge";
 import {
   cancelOrder,
   createOrder,
+  deleteOrder,
   getOrderPrescriptionUrl,
   getOrders,
   getPharmacies,
@@ -60,6 +61,16 @@ export default function Orders() {
     if (!confirm(t("patient:orders.confirmCancel"))) return;
     try {
       await cancelOrder(id);
+      await load();
+    } catch (err) {
+      alert(translateApiError(err, t));
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm(t("patient:orders.confirmDelete"))) return;
+    try {
+      await deleteOrder(id);
       await load();
     } catch (err) {
       alert(translateApiError(err, t));
@@ -153,6 +164,14 @@ export default function Orders() {
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/40"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> {t("common:buttons.cancel")}
+                        </button>
+                      )}
+                      {["completed", "cancelled"].includes(o.status) && (
+                        <button
+                          onClick={() => handleDelete(o.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/40"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> {t("common:buttons.delete")}
                         </button>
                       )}
                     </div>

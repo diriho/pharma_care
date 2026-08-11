@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FileText, RefreshCw, ShoppingBag } from "lucide-react";
+import { FileText, RefreshCw, ShoppingBag, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PageHeader from "../../components/PageHeader";
 import ErrorBanner from "../../components/ui/ErrorBanner";
@@ -7,6 +7,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import { SkeletonLines } from "../../components/ui/Skeleton";
 import OrderStatusBadge from "../../components/ui/OrderStatusBadge";
 import {
+  deletePatientOrder,
   getOrderPrescriptionUrl,
   getPatientOrders,
   updateOrderStatus,
@@ -93,6 +94,19 @@ export default function PatientOrders() {
       setOrders((list) =>
         list.map((o) => (o.id === order.id ? { ...o, ...updated } : o))
       );
+    } catch (err) {
+      alert(translateApiError(err, t));
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function handleDelete(order: PharmacyOrder) {
+    if (!confirm(t("dashboard:orders.confirmDelete"))) return;
+    setUpdating(order.id);
+    try {
+      await deletePatientOrder(order.id);
+      setOrders((list) => list.filter((o) => o.id !== order.id));
     } catch (err) {
       alert(translateApiError(err, t));
     } finally {
@@ -228,6 +242,15 @@ export default function PatientOrders() {
                           {t(`dashboard:${tr.labelKey}`)}
                         </button>
                       ))}
+                      {["completed", "cancelled"].includes(o.status) && (
+                        <button
+                          disabled={updating === o.id}
+                          onClick={() => handleDelete(o)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> {t("common:buttons.delete")}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
