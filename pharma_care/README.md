@@ -2,7 +2,8 @@
 
 ## Description
 **Pharma-Core** is a modern, cloud-based, multi-tenant pharmacy management platform designed specifically for officines in Burundi. It completely digitizes daily pharmacy operations—transforming everything from point-of-sale (POS) and inventory tracking to patient and supplier management into a single, seamless digital experience. By automating stock levels and surfacing intelligent alerts (like low stock or expiring medications), Pharma-Core empowers pharmacies to stop worrying about logistics and start focusing on delivering better patient care, all while guaranteeing complete data isolation and top-tier security.
-![Home page](pharma_care/DEMO/demo2.png)
+![Home page](DEMO/demo2.png)
+![Home page](DEMO/demo3.png)
 
 
 ## ✨ Key Features
@@ -10,7 +11,9 @@
 - Smart Inventory Management: Automated, live updates on stock when items are sold or received from restock orders.
 - Intelligent Alerts: Automated push notifications in a centralized dashboard bell for low-stock and expiring-soon products based on custom thresholds (seuils).
 - Patient & Supplier Tracking: Built-in modular CRM to track patient history and manage local/international suppliers.
+![Home page](DEMO/demo4.png)
 - Analytics & Reporting: A real-time data overview to monitor daily sales metrics, alongside one-click full history JSON exports for local audits or external accounting.
+![Home page](DEMO/demo3.png)
 - Tailored for Burundi: Supports native business onboarding fields essential for local compliance (Devise FBU, NIF, RC, Commune, Province).
 - Multi-Tenant Security: Secure infrastructure ensuring strict Row Level Security (RLS) so that every pharmacy's data is heavily isolated and protected.
 
@@ -58,9 +61,14 @@ Visit http://localhost:5173 — sign up to create a pharmacy, then explore the d
 - **Landing page** — services overview (POS, inventory, patients, suppliers, analytics, alerts) with Pharma Core branding.
 - **Signup / Login** — collects all pharmacy onboarding fields (Nom, Adresse, Commune, Province, Téléphone, Devise FBU, NIF, RC, alertes).
 - **Dashboard** — per-pharmacy isolated tables for POS, inventory, patients, suppliers, and restock orders. Stocks update live on sale and reception.
+![Home page](DEMO/demo1.png)
 - **Alerts** — backend computes low-stock and expiring-soon alerts from your seuils; surfaced in the dashboard bell.
 - **JSON export** — full history download from the sidebar or settings page.
 - **Logout & Delete account** — both available from the dashboard sidebar.
+- **Language switch** - french and English both available
+= **Dark/Light Mode**
+![Home page](DEMO/demo6.png)
+
 
 ## Tech Stack
 - **Frontend**: React 18.3 (not 19) + Vite + TypeScript + React Compiler.

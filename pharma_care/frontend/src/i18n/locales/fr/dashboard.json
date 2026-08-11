@@ -36,6 +36,7 @@
     "prescriptionOnly": "Commande sur ordonnance uniquement",
     "patientNote": "Note du patient : {{note}}",
     "confirmCancel": "Annuler / refuser cette commande ?",
+    "confirmDelete": "Supprimer cette commande de votre liste ?",
     "transitions": {
       "approve": "Approuver",
       "reject": "Refuser",
