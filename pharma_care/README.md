@@ -5,14 +5,13 @@
 <img src="./DEMO/demo2.png" alt="Home page" width="600" height="400">
 
 ## ✨ Key Features
-![Pharmacist view page](DEMO/demo3.png)
+- <img src="./DEMO/demo3.png" alt="Product Description page" width="600" height="400">
 - Point of Sale (POS): Fast and comprehensive checkout experience integrated directly with live inventory.
 - Smart Inventory Management: Automated, live updates on stock when items are sold or received from restock orders.
 - Intelligent Alerts: Automated push notifications in a centralized dashboard bell for low-stock and expiring-soon products based on custom thresholds (seuils).
 - Patient & Supplier Tracking: Built-in modular CRM to track patient history and manage local/international suppliers.
-![Patient portal](DEMO/demo4.png)
+- <img src="./DEMO/demo4.png" alt="Patient Portal" width="600" height="400">
 - Analytics & Reporting: A real-time data overview to monitor daily sales metrics, alongside one-click full history JSON exports for local audits or external accounting.
-![Product Description page](DEMO/demo3.png)
 - Tailored for Burundi: Supports native business onboarding fields essential for local compliance (Devise FBU, NIF, RC, Commune, Province).
 - Multi-Tenant Security: Secure infrastructure ensuring strict Row Level Security (RLS) so that every pharmacy's data is heavily isolated and protected.
 
@@ -20,7 +19,7 @@
 - Eradicating Waste & Stockouts: Expiration and reorder alerts help prevent costly medical waste and ensure that critical medicines are never unexpectedly out of stock.
 - Modernizing the Ecosystem: Brings pharmacies away from paper ledgers or expensive, localized legacy software to an affordable, unified, and always-accessible cloud solution.
 - Regulatory Readiness: Makes compliance and audits a breeze by standardizing data collection (NIF/RC) and enabling instant data exports.
-
+- <img src="./DEMO/demo5.png" alt="Pharmacy Portal" width="600" height="400">
 ## Architecture
 
 ```
@@ -60,19 +59,19 @@ Visit http://localhost:5173 — sign up to create a pharmacy, then explore the d
 - **Landing page** — services overview (POS, inventory, patients, suppliers, analytics, alerts) with Pharma Core branding.
 - **Signup / Login** — collects all pharmacy onboarding fields (Nom, Adresse, Commune, Province, Téléphone, Devise FBU, NIF, RC, alertes).
 - **Dashboard** — per-pharmacy isolated tables for POS, inventory, patients, suppliers, and restock orders. Stocks update live on sale and reception.
-![Login page](DEMO/demo1.png)
+- <img src="./DEMO/demo1.png" alt="Login page" width="600" height="400">
 - **Alerts** — backend computes low-stock and expiring-soon alerts from your seuils; surfaced in the dashboard bell.
 - **JSON export** — full history download from the sidebar or settings page.
 - **Logout & Delete account** — both available from the dashboard sidebar.
 - **Language switch** - french and English both available 
 - **Dark/Light Mode** - pages night mode integration
 
-![Notification Bar](DEMO/demo6.png)
+- <img src="./DEMO/demo6.png" alt="Notification Bar" width="600" height="400">
 
 
 ## Tech Stack
 - **Frontend**: React 18.3 (not 19) + Vite + TypeScript + React Compiler.
 - **Backend API**: Node 22 
-- **Database & Auth**: Supabase (PostgreSQL + Auth + Row Level Security)
+- **Database & Auth**: SupaBase (PostgreSQL + Auth + Row Level Security)
 - **Routing**: React Router
 - **Styling**: Tailwind CSS
