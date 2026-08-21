@@ -10,7 +10,10 @@ import authRoutes from "./supabase/auth/routes";
 import dataRoutes from "./supabase/dataHandler/routes";
 import patientRoutes from "./supabase/patient/routes";
 
+// Create an Express application
 const app = express();
+
+// configure CORS middleware to allow requests from the frontend
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
@@ -19,13 +22,17 @@ app.use(
 );
 app.use(express.json({ limit: "5mb" }));
 
+
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ ok: true });
 });
+
+// Register routes for authentication, data handling, and patient management
 app.use("/api/auth", authRoutes);
 app.use("/api/data", dataRoutes);
 app.use("/api/patient", patientRoutes);
 
+// Error handling middleware
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error("[server]", err);
   res.status(500).json({ error: (err as Error)?.message || "Erreur serveur" });
@@ -33,8 +40,7 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 app.use(errorHandler);
 
 
-// Vercel imports this app through api/[...path].ts. Keep the listener for
-// local development only; Vercel manages the HTTP server for serverless functions.
+// Start the server only if not running on Vercel
 if (!process.env.VERCEL) {
   const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, () => {
@@ -42,6 +48,5 @@ if (!process.env.VERCEL) {
   });
 }
 
-// Vercel's Express integration also recognizes server.ts as an application
-// entry point, so provide the Express app as the module's default export.
+// Provide the Express app as the module's default export.
 export default app;
