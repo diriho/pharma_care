@@ -1,22 +1,22 @@
 import { Router, type Request, type Response } from "express";
-import { admin } from "../client.js";
-import { requireAuth, requireRole, type AuthedRequest } from "../../middleware/auth.js";
+import { admin } from "../client";
+import { requireAuth, requireRole, type AuthedRequest } from "../../middleware/auth";
 import {
   createNotification,
   deleteNotification,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
-} from "../services/notifications.js";
+} from "../services/notifications";
 import {
   deleteMessage,
   getConversationForUser,
   getMessages,
   listConversations,
   sendMessage,
-} from "../services/messaging.js";
-import { listPharmacyRatings, ratePharmacy } from "../services/ratings.js";
-import { getPrescriptionSignedUrl } from "../services/prescriptions.js";
+} from "../services/messaging";
+import { listPharmacyRatings, ratePharmacy } from "../services/ratings";
+import { getPrescriptionSignedUrl } from "../services/prescriptions";
 
 const router = Router();
 router.use(requireAuth);
