@@ -41,3 +41,7 @@ if (!process.env.VERCEL) {
     console.log(`Pharma Core backend listening on http://localhost:${PORT}`);
   });
 }
+
+// Vercel's Express integration also recognizes server.ts as an application
+// entry point, so provide the Express app as the module's default export.
+export default app;
