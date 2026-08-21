@@ -1,4 +1,4 @@
-import { admin } from "../client.js";
+import { admin } from "../client";
 
 export type NotificationKind =
   | "new_rating"

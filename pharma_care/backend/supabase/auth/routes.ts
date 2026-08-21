@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import rateLimit from "express-rate-limit";
-import { admin, credentialClient } from "../client.js";
-import { requireAuth, type AuthedRequest } from "../../middleware/auth.js";
+import { admin, credentialClient } from "../client";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 
 const router = Router();
 

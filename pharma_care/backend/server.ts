@@ -6,9 +6,9 @@ import express, {
 } from "express";
 import cors from "cors";
 
-import authRoutes from "./supabase/auth/routes.js";
-import dataRoutes from "./supabase/dataHandler/routes.js";
-import patientRoutes from "./supabase/patient/routes.js";
+import authRoutes from "./supabase/auth/routes";
+import dataRoutes from "./supabase/dataHandler/routes";
+import patientRoutes from "./supabase/patient/routes";
 
 // Create an Express application
 const app = express();

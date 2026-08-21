@@ -1,5 +1,5 @@
-import { admin } from "../client.js";
-import { createNotification } from "./notifications.js";
+import { admin } from "../client";
+import { createNotification } from "./notifications";
 
 export type ConversationRow = {
   id: string;

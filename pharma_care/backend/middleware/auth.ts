@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "@supabase/supabase-js";
-import { admin } from "../supabase/client.js";
+import { admin } from "../supabase/client";
 
 export type UserRole = "facility_admin" | "patient";
 
