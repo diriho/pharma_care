@@ -10,7 +10,7 @@ import authRoutes from "./supabase/auth/routes";
 import dataRoutes from "./supabase/dataHandler/routes";
 import patientRoutes from "./supabase/patient/routes";
 
-const app = express();
+export const app = express();
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
@@ -33,7 +33,11 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 app.use(errorHandler);
 
 
-const PORT = Number(process.env.PORT) || 3000;
-app.listen(PORT, () => {
-  console.log(`Pharma Core backend listening on http://localhost:${PORT}`);
-});
+// Vercel imports this app through api/[...path].ts. Keep the listener for
+// local development only; Vercel manages the HTTP server for serverless functions.
+if (!process.env.VERCEL) {
+  const PORT = Number(process.env.PORT) || 3000;
+  app.listen(PORT, () => {
+    console.log(`Pharma Core backend listening on http://localhost:${PORT}`);
+  });
+}
