@@ -17,10 +17,13 @@ const app = express();
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
   })
 );
-app.use(express.json({ limit: "5mb" }));
+app.use(
+  express.json()
+);
 
 
 app.get("/api/health", (_req: Request, res: Response) => {
