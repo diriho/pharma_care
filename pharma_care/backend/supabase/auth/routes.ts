@@ -1,14 +1,11 @@
 import { Router, type Request, type Response } from "express";
 import rateLimit from "express-rate-limit";
-import { admin, credentialClient } from "../client";
-import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { admin, credentialClient } from "../client.js";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth.js";
 
 const router = Router();
 
-// Stable error codes the frontend can map to translated, role/enumeration-safe
-// copy. The `error` field stays a reasonable French default for any caller
-// that doesn't consume `code` (e.g. manual testing), but never echoes raw
-// Supabase/Postgres error text — that's logged server-side only via `detail`.
+
 function authError(
   res: Response,
   status: number,

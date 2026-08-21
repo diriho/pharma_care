@@ -1,4 +1,4 @@
-import { admin } from "../client";
+import { admin } from "../client.js";
 
 const SIGNED_URL_TTL_SECONDS = 3600;
 
