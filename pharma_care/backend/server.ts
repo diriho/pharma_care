@@ -13,6 +13,10 @@ import patientRoutes from "./supabase/patient/routes";
 // Create an Express application
 const app = express();
 
+
+// configure the proxy trust settings to avoid serverless crash
+app.set("trust proxy", 1);
+
 // configure CORS middleware to allow requests from the frontend
 app.use(
   cors({

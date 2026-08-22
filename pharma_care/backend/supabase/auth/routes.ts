@@ -5,7 +5,6 @@ import { requireAuth, type AuthedRequest } from "../../middleware/auth";
 
 const router = Router();
 
-
 function authError(
   res: Response,
   status: number,
@@ -24,6 +23,13 @@ const authLimiter = rateLimit({
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
+
+  //Prevents validation checks from throwing crash-inducing errors
+  validate: { 
+    trustProxy: false, // Prevents ERR_ERL_PERMISSIVE_TRUST_PROXY crashes
+    xForwardedForHeader: false 
+  },
+
   handler: (_req, res) =>
     authError(res, 429, "TOO_MANY_ATTEMPTS", "Trop de tentatives. Réessayez plus tard."),
 });
