@@ -13,7 +13,6 @@ import patientRoutes from "./supabase/patient/routes";
 // Create an Express application
 const app = express();
 
-
 // configure the proxy trust settings to avoid serverless crash
 app.set("trust proxy", 1);
 
@@ -52,6 +51,7 @@ if (!process.env.VERCEL) {
   const PORT = Number(process.env.PORT) || 3000;
   app.listen(PORT, () => {
     console.log(`Pharma Core backend listening on http://localhost:${PORT}`);
+    console.log(process.env.CLIENT_ORIGIN, "process.env.CLIENT_ORIGIN");
   });
 }
 
