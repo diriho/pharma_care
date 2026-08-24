@@ -16,13 +16,39 @@ const app = express();
 // configure the proxy trust settings to avoid serverless crash
 app.set("trust proxy", 1);
 
+// CLIENT_ORIGIN accepts a comma-separated list so local dev, the production
+// domain, and any custom domain can be allowed at once. Trailing slashes are
+// stripped: the browser's Origin header never has one, so "https://x.app/"
+// in the env var would silently match nothing.
+const allowedOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
+// Vercel gives every preview deployment its own subdomain, so pinning a single
+// URL breaks on every branch push. Opt in with ALLOW_VERCEL_PREVIEWS=true.
+const allowVercelPreviews = process.env.ALLOW_VERCEL_PREVIEWS === "true";
+
 // configure CORS middleware to allow requests from the frontend
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    origin(origin, callback) {
+      // No Origin header: curl, server-to-server, or a same-origin request.
+      if (!origin) return callback(null, true);
+      const clean = origin.replace(/\/+$/, "");
+      if (allowedOrigins.includes(clean)) return callback(null, true);
+      if (allowVercelPreviews && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(clean)) {
+        return callback(null, true);
+      }
+      // A blocked origin surfaces in the browser only as an opaque
+      // "Failed to fetch", so log the exact value CLIENT_ORIGIN is missing.
+      console.warn(
+        `[cors] blocked origin ${origin} — allowed: ${allowedOrigins.join(", ") || "(none)"}`
+      );
+      return callback(null, false);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
-    
   })
 );
 app.use(
@@ -31,7 +57,7 @@ app.use(
 
 
 app.get("/api/health", (_req: Request, res: Response) => {
-  res.json({ ok: true });
+  res.json({ ok: true, allowedOrigins, allowVercelPreviews });
 });
 
 // Register routes for authentication, data handling, and patient management
