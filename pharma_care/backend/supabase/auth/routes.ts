@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { rateLimit } from "express-rate-limit";
 import { admin, credentialClient } from "../client";
 import { requireAuth, type AuthedRequest } from "../../middleware/auth";
+import { asyncHandler } from "../../middleware/asyncHandler";
 
 const router = Router();
 
@@ -77,7 +78,7 @@ function validatePharmacy(payload: PharmacyPayload): string | null {
 }
 
 // Signup route to create a new user and pharmacy settings
-router.post("/signup", authLimiter, async (req: Request, res: Response) => {
+router.post("/signup", authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email, password, pharmacy } = req.body || {};
   if (!email || !password) {
     return authError(res, 400, "MISSING_CREDENTIALS", "Email et mot de passe requis");
@@ -137,7 +138,7 @@ router.post("/signup", authLimiter, async (req: Request, res: Response) => {
     return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", signInError);
   }
   return res.json({ session: signIn.session, user: signIn.user });
-});
+}));
 
 interface PatientProfilePayload {
   fullName?: string;
@@ -149,7 +150,7 @@ interface PatientProfilePayload {
 }
 
 // Patient signup: creates an auth user with the "patient" role and a patient profile
-router.post("/signup/patient", authLimiter, async (req: Request, res: Response) => {
+router.post("/signup/patient", authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email, password, profile } = req.body || {};
   if (!email || !password) {
     return authError(res, 400, "MISSING_CREDENTIALS", "Email et mot de passe requis");
@@ -203,11 +204,11 @@ router.post("/signup/patient", authLimiter, async (req: Request, res: Response) 
     return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", signInError);
   }
   return res.json({ session: signIn.session, user: signIn.user });
-});
+}));
 
 // if the user is already logged in, return their session and user info
 
-router.post("/login", authLimiter, async (req: Request, res: Response) => {
+router.post("/login", authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
     return authError(res, 400, "MISSING_CREDENTIALS", "Email et mot de passe requis");
@@ -219,16 +220,16 @@ router.post("/login", authLimiter, async (req: Request, res: Response) => {
     return authError(res, 401, "INVALID_CREDENTIALS", "Email ou mot de passe incorrect", error);
   }
   return res.json({ session: data.session, user: data.user });
-});
+}));
 
 // Logout route to sign out the user 
-router.post("/logout", requireAuth, async (req: Request, res: Response) => {
+router.post("/logout", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const token = (req as AuthedRequest).accessToken;
   await admin.auth.admin.signOut(token).catch(() => {});
   return res.json({ ok: true });
-});
+}));
 
-router.get("/me", requireAuth, async (req: Request, res: Response) => {
+router.get("/me", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { user, role } = req as AuthedRequest;
 
   if (role === "patient") {
@@ -252,7 +253,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
     return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", error);
   }
   return res.json({ user, role, pharmacy: data || null, patientProfile: null });
-});
+}));
 
 // Called right after a GitHub OAuth redirect completes. A first-time OAuth
 // sign-in has a valid session but no role in app_metadata and no profile row
@@ -260,7 +261,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
 // before ever returning a session). This assigns the role once (from the
 // caller's intent, if this is genuinely the first time) and reports whether
 // a profile row still needs to be filled in.
-router.post("/oauth/finish", requireAuth, async (req: Request, res: Response) => {
+router.post("/oauth/finish", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const user = (req as AuthedRequest).user;
   const intent = req.body?.intent;
   const rawRole = (user.app_metadata as Record<string, unknown> | null)?.role;
@@ -288,11 +289,11 @@ router.post("/oauth/finish", requireAuth, async (req: Request, res: Response) =>
     return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", error);
   }
   return res.json({ role, profileComplete: !!data });
-});
+}));
 
 // Creates the missing pharmacy_settings/patient_profiles row for a user who
 // signed in via GitHub OAuth (role already assigned by /oauth/finish).
-router.post("/oauth/profile", requireAuth, async (req: Request, res: Response) => {
+router.post("/oauth/profile", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const { user, role } = req as AuthedRequest;
   const table = role === "patient" ? "patient_profiles" : "pharmacy_settings";
   const { data: existing } = await admin.from(table).select("user_id").eq("user_id", user.id).single();
@@ -344,10 +345,10 @@ router.post("/oauth/profile", requireAuth, async (req: Request, res: Response) =
   }
   const { data } = await admin.from("pharmacy_settings").select("*").eq("user_id", user.id).single();
   return res.json(data);
-});
+}));
 
 // route to delete the user account and all associated data
-router.delete("/account", requireAuth, async (req: Request, res: Response) => {
+router.delete("/account", requireAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthedRequest).user.id;
   const tables = [
     "sales",
@@ -377,7 +378,7 @@ router.delete("/account", requireAuth, async (req: Request, res: Response) => {
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) return authError(res, 500, "SERVER_ERROR", "Une erreur est survenue, réessayez", error);
   return res.json({ ok: true });
-});
+}));
 
 // export at the router with all the routes api endpoints
 export default router;

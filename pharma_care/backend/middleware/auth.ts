@@ -30,15 +30,23 @@ export async function requireAuth(
     return;
   }
 
-  const { data, error } = await admin.auth.getUser(token);
-  if (error || !data?.user) {
-    res.status(401).json({ error: "Invalid or expired session" });
-    return;
+  // Anything thrown here (an unreachable Supabase, or client.ts refusing to
+  // build the admin client because SUPABASE_* env vars are unset) must reach
+  // the error middleware. Left unguarded, this async middleware rejects, the
+  // response is never sent, and the serverless invocation dies.
+  try {
+    const { data, error } = await admin.auth.getUser(token);
+    if (error || !data?.user) {
+      res.status(401).json({ error: "Invalid or expired session" });
+      return;
+    }
+    (req as AuthedRequest).user = data.user;
+    (req as AuthedRequest).accessToken = token;
+    (req as AuthedRequest).role = resolveRole(data.user);
+    next();
+  } catch (err) {
+    next(err);
   }
-  (req as AuthedRequest).user = data.user;
-  (req as AuthedRequest).accessToken = token;
-  (req as AuthedRequest).role = resolveRole(data.user);
-  next();
 }
 
 // Restrict a route to one or more roles. Use after requireAuth.

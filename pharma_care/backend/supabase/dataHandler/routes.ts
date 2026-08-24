@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { admin } from "../client";
 import { requireAuth, requireRole, type AuthedRequest } from "../../middleware/auth";
+import { asyncHandler } from "../../middleware/asyncHandler";
 import {
   createNotification,
   deleteNotification,
@@ -755,7 +756,7 @@ router.get("/analytics/weekly-patients", async (req: Request, res: Response) => 
   }
 });
 
-router.get("/export", async (req: Request, res: Response) => {
+router.get("/export", asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthedRequest).user.id;
   const [settings, meds, suppliers, patients, sales, restock] = await Promise.all([
     admin.from("pharmacy_settings").select("*").eq("user_id", userId).single(),
@@ -780,6 +781,6 @@ router.get("/export", async (req: Request, res: Response) => {
     `attachment; filename="pharma-core-export-${Date.now()}.json"`
   );
   res.send(JSON.stringify(payload, null, 2));
-});
+}));
 
 export default router;
