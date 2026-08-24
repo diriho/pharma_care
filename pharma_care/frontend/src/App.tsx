@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import {
   AuthProvider,
   homePathForRole,
@@ -135,6 +136,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Analytics />
+        <SpeedInsights />
       </BrowserRouter>
     </AuthProvider>
   );
