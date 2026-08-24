@@ -1,0 +1,22 @@
+<svg
+  width="56"
+  height="56"
+  viewBox="0 0 56 56"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Dark green rounded square -->
+  <rect
+    width="56"
+    height="56"
+    rx="20"
+    fill="#003D24"
+  />
+
+  <!-- Green plus -->
+  <path
+    d="M28 17V39M17 28H39"
+    stroke="#6EFF8A"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+</svg>

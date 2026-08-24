@@ -35,6 +35,7 @@ export function homePathForRole(role: UserRole | null): string {
   return role === "patient" ? "/patient" : "/dashboard";
 }
 
+// pharmacy type definition for the pharmacy portal
 export type Pharmacy = {
   user_id: string;
   name: string;
@@ -49,6 +50,7 @@ export type Pharmacy = {
   low_stock_alert_level: number;
 };
 
+// payload type definition
 export type SignupPayload = {
   email: string;
   password: string;
@@ -66,6 +68,7 @@ export type SignupPayload = {
   };
 };
 
+// patient signup payload type definition
 export type PatientSignupPayload = {
   email: string;
   password: string;
@@ -79,6 +82,7 @@ export type PatientSignupPayload = {
   };
 };
 
+// context type definition
 type AuthContextValue = {
   loading: boolean;
   user: User | null;
@@ -103,6 +107,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// provider component definition
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
@@ -142,6 +147,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.error("[AuthContext] getSession error:", error);
+          // The stored session is unusable — revoked, or expired beyond what a
+          // refresh can recover. Clear it locally so later page loads stop
+          // replaying the same failing /auth/v1/user call. scope: "local"
+          // skips the server round-trip, which would fail the same way.
+          await supabase.auth.signOut({ scope: "local" }).catch(() => {});
         }
 
         if (!mounted) return;

@@ -27,6 +27,30 @@ function getSupabaseSessionKey(): string {
   return projectRef ? `sb-${projectRef}-auth-token` : "sb-auth-token";
 }
 
+type StoredSession = { access_token?: string; expires_at?: number };
+
+// supabase-js has used a few storage shapes across versions; normalise them.
+function readStoredSession(): StoredSession | null {
+  try {
+    const raw = localStorage.getItem(getSupabaseSessionKey());
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.access_token) return parsed as StoredSession;
+    if (parsed?.currentSession?.access_token) return parsed.currentSession as StoredSession;
+    if (Array.isArray(parsed) && parsed[0]?.access_token) return parsed[0] as StoredSession;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// 30s of slack so a token that would expire mid-flight is not used either.
+// An entry with no expires_at cannot be verified, so it is not trusted.
+function isExpired(session: StoredSession): boolean {
+  if (typeof session.expires_at !== "number") return true;
+  return Date.now() >= session.expires_at * 1000 - 30_000;
+}
+
 // get the athorization header with the current access token
 async function authHeader(): Promise<Record<string, string>> {
   try {
@@ -39,25 +63,15 @@ async function authHeader(): Promise<Record<string, string>> {
 
     let token = data?.session?.access_token;
 
-    // Fallback to localStorage
+    // Fallback to localStorage: getSession() can fail transiently (offline, or
+    // a refresh that lost a race) while a still-valid token sits in storage.
+    // Only use it if it has not expired — an expired token comes back as a 401,
+    // and the 401 branch in api() below signs the user out, so replaying a
+    // stale token would turn a recoverable blip into a forced logout.
     if (!token) {
-      const sessionKey = getSupabaseSessionKey();
-      const sessionStr = localStorage.getItem(sessionKey);
-
-      if (sessionStr) {
-        const parsed = JSON.parse(sessionStr);
-
-        // Handle several possible storage formats
-        if (parsed?.access_token) {
-          token = parsed.access_token;
-        } else if (parsed?.currentSession?.access_token) {
-          token = parsed.currentSession.access_token;
-        } else if (
-          Array.isArray(parsed) &&
-          parsed[0]?.access_token
-        ) {
-          token = parsed[0].access_token;
-        }
+      const stored = readStoredSession();
+      if (stored && !isExpired(stored)) {
+        token = stored.access_token;
       }
     }
 
