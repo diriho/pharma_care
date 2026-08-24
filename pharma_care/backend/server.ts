@@ -6,9 +6,9 @@ import express, {
 } from "express";
 import cors from "cors";
 
-import authRoutes from "./supabase/auth/routes";
-import dataRoutes from "./supabase/dataHandler/routes";
-import patientRoutes from "./supabase/patient/routes";
+import authRoutes from "./supabase/auth/routes.js";
+import dataRoutes from "./supabase/dataHandler/routes.js";
+import patientRoutes from "./supabase/patient/routes.js";
 
 // Create an Express application
 const app = express();
@@ -22,6 +22,7 @@ app.use(
     origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
+    
   })
 );
 app.use(

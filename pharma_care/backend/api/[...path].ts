@@ -1,4 +1,4 @@
-import app from "../server";
+import app from "../server.js";
 
 // A Vercel catch-all Serverless Function. It forwards every /api/* request
 // to the Express application, whose routes already include the /api prefix.

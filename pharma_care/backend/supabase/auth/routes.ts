@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { rateLimit } from "express-rate-limit";
-import { admin, credentialClient } from "../client";
-import { requireAuth, type AuthedRequest } from "../../middleware/auth";
-import { asyncHandler } from "../../middleware/asyncHandler";
+import { admin, credentialClient } from "../client.js";
+import { requireAuth, type AuthedRequest } from "../../middleware/auth.js";
+import { asyncHandler } from "../../middleware/asyncHandler.js";
 
 const router = Router();
 
