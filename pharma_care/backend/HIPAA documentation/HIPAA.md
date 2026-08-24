@@ -2,7 +2,7 @@
 
 ## Overview
 
-The pharmacy management platform has been expanded with a set of authentication, security, privacy, usability, and pharmacy-operations features designed to make the system more secure and practical for real-world pharmacy workflows.
+The pharmacy management platform has been expanded with a set of authentication, security, privacy, usability, and pharmacy-operations features designed to make the system more secure and practical for real-world pharmacy workflows and observing HIPAA guidelines on building products that deals with health information of patients.
 
 The new functionality covers four major areas:
 
@@ -273,8 +273,7 @@ Examples include:
 A secure pharmacy system should not only store the current state of a record. It should also provide historical accountability.
 
 The audit trail makes it possible to determine:
-
-Who performed an action, what happened, and when it happened.
+`Who performed an action, what happened, and when it happened.`
 
 This is particularly important when investigating errors, unauthorized activity, or suspicious changes.
 
