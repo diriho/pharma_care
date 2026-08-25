@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Github } from "lucide-react";
 import { homePathForRole, useAuth } from "../contexts/AuthContext";
 import RoleToggle, { type AccountType } from "../components/ui/RoleToggle";
+import GoogleSignInButton from "../components/ui/GoogleSignInButton";
 import { translateApiError } from "../i18n/apiError";
 import { ThemeToggleButton } from "../components/ui/ThemeToggle";
 import { LanguageSwitcherButton } from "../components/ui/LanguageSwitcher";
 
 export default function Login() {
-  const { login, loginWithGitHub } = useAuth();
+  const { login, loginWithGitHub, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation(["auth", "common"]);
   const [accountType, setAccountType] = useState<AccountType>("pharmacy");
@@ -17,6 +18,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleUnavailable, setGoogleUnavailable] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +37,34 @@ export default function Login() {
       setSubmitting(false);
     }
   }
+
+  // Called by Google Identity Services with the signed ID token. Exchanging it
+  // for a Supabase session happens entirely in-page — no OAuth redirect — so
+  // this also picks the landing route itself instead of going via /oauth/callback.
+  async function handleSignInWithGoogle(credential: string, nonce?: string) {
+    setError(null);
+    try {
+      const res = await loginWithGoogle(credential, {
+        nonce,
+        intent: accountType === "patient" ? "patient" : "pharmacy",
+      });
+      if (!res.role) {
+        // No role could be derived — let the shared callback page ask.
+        navigate("/oauth/callback", { replace: true });
+        return;
+      }
+      navigate(res.profileComplete ? homePathForRole(res.role) : "/onboarding", {
+        replace: true,
+      });
+    } catch (err) {
+      setError(translateApiError(err, t));
+    }
+  }
+
+  const onGoogleUnavailable = useCallback((reason: string) => {
+    console.error("[Login] Google sign-in unavailable:", reason);
+    setGoogleUnavailable(true);
+  }, []);
 
   async function onGitHubClick() {
     setError(null);
@@ -87,6 +117,19 @@ export default function Login() {
               setError(null);
             }}
           />
+
+          {googleUnavailable ? (
+            <p className="mb-3 text-center text-xs text-[#a1a1aa] dark:text-slate-500">
+              {t("auth:login.googleUnavailable")}
+            </p>
+          ) : (
+            <div className="mb-3">
+              <GoogleSignInButton
+                onCredential={handleSignInWithGoogle}
+                onUnavailable={onGoogleUnavailable}
+              />
+            </div>
+          )}
 
           <button
             type="button"

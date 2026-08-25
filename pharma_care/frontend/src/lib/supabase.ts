@@ -9,8 +9,10 @@ if (!url || !anonKey) {
   );
 }
 
+// Create a Supabase client. Sign-in is always triggered by a user action —
+// AuthContext's login/loginWithGitHub/loginWithGoogle — never at module load.
 export const supabase = createClient(url, anonKey, {
   auth: { persistSession: true, autoRefreshToken: true },
-  
 });
 
+export default supabase;

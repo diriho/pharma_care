@@ -1,0 +1,9 @@
+[auth.external.google]
+enabled = true
+# Same client ID the frontend GSI button uses (VITE_GOOGLE_CLIENT_ID); it must
+# also be listed under Authorized Client IDs for the Google provider so GoTrue
+# accepts the ID tokens signInWithIdToken sends.
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
+# The GSI button sends a nonce, so keep the check on. See GoogleSignInButton.tsx.
+skip_nonce_check = false

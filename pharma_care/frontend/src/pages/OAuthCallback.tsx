@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { homePathForRole, useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import supabase from "../lib/supabase";
 import { api } from "../api/client";
 import { translateApiError } from "../i18n/apiError";
 import { ThemeToggleButton } from "../components/ui/ThemeToggle";
