@@ -82,6 +82,14 @@ export type PatientSignupPayload = {
   };
 };
 
+// What /auth/oauth/finish reports back: the role the account settled on (null
+// when it is a first sign-in with no intent to derive one from) and whether a
+// pharmacy/patient profile row already exists.
+export type OAuthFinish = {
+  role: UserRole | null;
+  profileComplete: boolean;
+};
+
 // context type definition
 type AuthContextValue = {
   loading: boolean;
@@ -100,6 +108,10 @@ type AuthContextValue = {
   signup: (payload: SignupPayload) => Promise<void>;
   signupPatient: (payload: PatientSignupPayload) => Promise<void>;
   loginWithGitHub: (intent?: "patient" | "pharmacy") => Promise<void>;
+  loginWithGoogle: (
+    credential: string,
+    options?: { nonce?: string; intent?: "patient" | "pharmacy" }
+  ) => Promise<OAuthFinish>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   refreshPharmacy: () => Promise<void>;
@@ -276,6 +288,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw new ApiError(error.message, "OAUTH_FAILED");
   }, []);
 
+  // Google Identity Services hands us an ID token in the page (no redirect), so
+  // unlike GitHub there is no trip through /oauth/callback — the role assignment
+  // and profile check that page performs are done inline here instead.
+  const loginWithGoogle = useCallback(
+    async (
+      credential: string,
+      options?: { nonce?: string; intent?: "patient" | "pharmacy" }
+    ): Promise<OAuthFinish> => {
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: credential,
+        nonce: options?.nonce,
+      });
+      if (error) throw new ApiError(error.message, "OAUTH_FAILED");
+
+      // A first-time OAuth sign-in has a session but no role in app_metadata
+      // and no profile row; this assigns the role from the caller's intent.
+      const res = await api<OAuthFinish>("/auth/oauth/finish", {
+        method: "POST",
+        body: JSON.stringify({ intent: options?.intent }),
+      });
+
+      if (res.role) {
+        // app_metadata is embedded in the JWT at issuance — refresh so the
+        // locally-cached session reflects a role that was just assigned.
+        await supabase.auth.refreshSession();
+        await loadPharmacy();
+      }
+      return res;
+    },
+    [loadPharmacy]
+  );
+
   const logout = useCallback(async () => {
     try {
       await api("/auth/logout", { method: "POST" });
@@ -308,11 +353,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signup,
       signupPatient,
       loginWithGitHub,
+      loginWithGoogle,
       logout,
       deleteAccount,
       refreshPharmacy: loadPharmacy,
     }),
-    [loading, session, pharmacy, patientProfile, pharmacyLoading, pharmacyError, login, signup, signupPatient, loginWithGitHub, logout, deleteAccount, loadPharmacy]
+    [loading, session, pharmacy, patientProfile, pharmacyLoading, pharmacyError, login, signup, signupPatient, loginWithGitHub, loginWithGoogle, logout, deleteAccount, loadPharmacy]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
