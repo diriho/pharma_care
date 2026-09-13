@@ -484,9 +484,18 @@ router.get("/analytics", async (req: Request, res: Response) => {
 
     const days = ANALYTICS_RANGE_DAYS[String(req.query.range)] ?? 30;
     const isAllTime = req.query.range === "all";
-    const now = Date.now();
-    const periodStart = isAllTime ? -Infinity : now - days * 86_400_000;
-    const previousStart = isAllTime ? -Infinity : now - days * 2 * 86_400_000;
+    // Align to midnight (matches the /analytics/weekly-patients convention below) so the
+    // `days`-many calendar-day buckets built for salesTrend exactly cover the same window
+    // used to filter currentSales/previousSales — otherwise the oldest partial day would be
+    // counted in the KPIs but silently dropped from the trend chart and CSV export.
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const periodStartDate = new Date(todayStart);
+    if (!isAllTime) periodStartDate.setDate(periodStartDate.getDate() - (days - 1));
+    const previousStartDate = new Date(periodStartDate);
+    if (!isAllTime) previousStartDate.setDate(previousStartDate.getDate() - days);
+    const periodStart = isAllTime ? -Infinity : periodStartDate.getTime();
+    const previousStart = isAllTime ? -Infinity : previousStartDate.getTime();
 
     const currentSales = sales.filter((s) => new Date(s.created_at || 0).getTime() >= periodStart);
     const previousSales = isAllTime
@@ -509,8 +518,14 @@ router.get("/analytics", async (req: Request, res: Response) => {
         const qty = it.quantity || 0;
         const lineRevenue = qty * (it.unit_price || 0);
         const med = medsById.get(it.medicine_id);
-        itemRevenue += lineRevenue;
-        itemCost += qty * (med?.purchase_price || 0);
+        // Margin is only meaningful when we know the cost basis. A medicine can be hard-deleted
+        // (sale.items is a JSONB snapshot with no FK) while old sales still reference it — exclude
+        // those lines from the margin base entirely rather than costing them at 0, which would
+        // silently inflate marginPercent. topMedicines below still counts them (revenue-only).
+        if (med) {
+          itemRevenue += lineRevenue;
+          itemCost += qty * (med.purchase_price || 0);
+        }
         const entry = medicineStats.get(it.medicine_id) || {
           name: med?.name || it.name || it.medicine_id,
           quantity: 0,
@@ -545,8 +560,10 @@ router.get("/analytics", async (req: Request, res: Response) => {
         .sort((a, b) => (a.date < b.date ? -1 : 1));
     } else {
       salesTrend = [];
-      for (let i = days - 1; i >= 0; i--) {
-        const key = dayKey(new Date(now - i * 86_400_000).toISOString());
+      for (let i = 0; i < days; i++) {
+        const d = new Date(periodStartDate);
+        d.setDate(periodStartDate.getDate() + i);
+        const key = dayKey(d.toISOString());
         const entry = trendByDay.get(key) || { revenue: 0, sales: 0 };
         salesTrend.push({ date: key, ...entry });
       }

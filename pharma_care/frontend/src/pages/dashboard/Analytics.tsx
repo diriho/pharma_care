@@ -45,6 +45,13 @@ type Alerts = { alerts: { severity: string; message: string; type: string }[] };
 
 const RANGES: Range[] = ["7", "30", "90", "all"];
 
+// Quotes + escapes a CSV field, and neutralizes formula injection (=, +, -, @ prefixes)
+// for pharmacy/medicine names, which are free-text user input opened later in Excel/Sheets.
+function csvField(value: string) {
+  const safe = /^[=+\-@]/.test(value) ? `'${value}` : value;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
 export default function Analytics() {
   const { pharmacy } = useAuth();
   const { t } = useTranslation(["dashboard", "common"]);
@@ -86,15 +93,15 @@ export default function Analytics() {
     const rangeLabel =
       range === "all" ? t("dashboard:analytics.range.all") : t("dashboard:analytics.range.days", { count: Number(range) });
     const lines: string[] = [
-      t("dashboard:analytics.export.title"),
-      `${t("dashboard:analytics.export.pharmacy")},${pharmacy?.name || ""}`,
-      `${t("dashboard:analytics.export.period")},${rangeLabel}`,
+      csvField(t("dashboard:analytics.export.title")),
+      `${csvField(t("dashboard:analytics.export.pharmacy"))},${csvField(pharmacy?.name || "")}`,
+      `${csvField(t("dashboard:analytics.export.period"))},${csvField(rangeLabel)}`,
       "",
       t("dashboard:analytics.export.trendHeader"),
       ...data.salesTrend.map((p) => `${p.date},${p.revenue},${p.sales}`),
       "",
       t("dashboard:analytics.export.medicinesHeader"),
-      ...data.topMedicines.map((m) => `"${m.name.replace(/"/g, '""')}",${m.quantity},${m.revenue}`),
+      ...data.topMedicines.map((m) => `${csvField(m.name)},${m.quantity},${m.revenue}`),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -272,7 +279,6 @@ function KPI({
   icon: React.ReactNode;
   tone?: "emerald";
 }) {
-  const { t } = useTranslation("dashboard");
   return (
     <div
       className={`rounded-2xl p-5 ${
@@ -296,7 +302,6 @@ function KPI({
         {hint && <span className={`text-xs ${tone === "emerald" ? "text-[#6eff8a]/70" : "text-slate-500 dark:text-slate-400"}`}>{hint}</span>}
         {changePct !== undefined && <TrendBadge changePct={changePct} light={tone === "emerald"} />}
       </div>
-      <span className="sr-only">{t("analytics.kpi.vsPreviousPeriod")}</span>
     </div>
   );
 }

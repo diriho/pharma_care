@@ -221,8 +221,7 @@
       "margin": "Marge brute",
       "totalRevenue": "CA total (historique)",
       "stockValuePurchase": "Valeur stock (achat)",
-      "stockValueSelling": "Valeur stock (vente)",
-      "vsPreviousPeriod": "par rapport à la période précédente"
+      "stockValueSelling": "Valeur stock (vente)"
     },
     "trend": {
       "new": "Nouveau",

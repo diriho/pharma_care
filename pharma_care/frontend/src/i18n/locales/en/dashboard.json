@@ -221,8 +221,7 @@
       "margin": "Gross margin",
       "totalRevenue": "Total revenue (all-time)",
       "stockValuePurchase": "Stock value (purchase)",
-      "stockValueSelling": "Stock value (selling)",
-      "vsPreviousPeriod": "vs. the previous period"
+      "stockValueSelling": "Stock value (selling)"
     },
     "trend": {
       "new": "New",
