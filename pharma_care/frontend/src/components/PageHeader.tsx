@@ -6,7 +6,7 @@ export default function PageHeader({
   subtitle,
   action,
 }: {
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   action?: ReactNode;
 }) {

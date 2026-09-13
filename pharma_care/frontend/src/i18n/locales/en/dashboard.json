@@ -204,22 +204,49 @@
   },
   "analytics": {
     "title": "Analytics & Reports",
+    "proBadge": "Pro",
     "subtitle": "Key indicators and business trends for your pharmacy.",
     "loadError": "Error loading analytics: {{message}}",
     "dataUnavailable": "data unavailable",
+    "range": {
+      "allShort": "All",
+      "daysShort": "{{count}}d",
+      "all": "the full history",
+      "days": "the last {{count}} days"
+    },
     "kpi": {
-      "totalRevenue": "Total revenue",
+      "periodRevenue": "Revenue (period)",
+      "periodSales": "Sales (period)",
+      "avgSaleValue": "Average basket",
+      "margin": "Gross margin",
+      "totalRevenue": "Total revenue (all-time)",
       "stockValuePurchase": "Stock value (purchase)",
       "stockValueSelling": "Stock value (selling)",
-      "totalSales": "Total sales"
+      "vsPreviousPeriod": "vs. the previous period"
     },
-    "salesByDay": {
-      "title": "Sales by day",
-      "empty": "No sales recorded."
+    "trend": {
+      "new": "New",
+      "vsPreviousPeriod": "vs. the previous period"
+    },
+    "stockHealth": {
+      "message": "{{lowStock}} medication(s) low on stock, {{expiring}} expiring soon or expired.",
+      "cta": "View inventory"
+    },
+    "revenueTrend": {
+      "title": "Revenue trend",
+      "empty": "No sales in this period."
     },
     "topMedicines": {
-      "title": "Best-selling medications",
+      "title": "Most profitable medications",
       "empty": "No data yet."
+    },
+    "export": {
+      "button": "Export (CSV)",
+      "title": "Analytics report",
+      "pharmacy": "Pharmacy",
+      "period": "Period",
+      "trendHeader": "Date,Revenue,Sales",
+      "medicinesHeader": "Medication,Quantity,Revenue"
     }
   },
   "messages": {
@@ -241,6 +268,16 @@
       "ariaLabel": "Average rating trend by month",
       "reviewCount_one": "({{count}} review)",
       "reviewCount_other": "({{count}} reviews)"
+    },
+    "revenueTrend": {
+      "ariaLabel": "Revenue trend over the selected period",
+      "tooltipSales_one": "{{count}} sale",
+      "tooltipSales_other": "{{count}} sales"
+    },
+    "topMedicines": {
+      "ariaLabel": "Medications ranked by revenue",
+      "tooltipQuantity_one": "{{count}} unit sold",
+      "tooltipQuantity_other": "{{count}} units sold"
     },
     "weeklyVolume": {
       "title": "Weekly Patient Volume",

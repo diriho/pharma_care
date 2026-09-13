@@ -204,22 +204,49 @@
   },
   "analytics": {
     "title": "Analyses & Rapports",
+    "proBadge": "Pro",
     "subtitle": "Indicateurs clés et tendances commerciales de votre pharmacie.",
     "loadError": "Erreur de chargement des analyses : {{message}}",
     "dataUnavailable": "données indisponibles",
+    "range": {
+      "allShort": "Tout",
+      "daysShort": "{{count}} j",
+      "all": "l'historique complet",
+      "days": "les {{count}} derniers jours"
+    },
     "kpi": {
-      "totalRevenue": "CA total",
+      "periodRevenue": "CA (période)",
+      "periodSales": "Ventes (période)",
+      "avgSaleValue": "Panier moyen",
+      "margin": "Marge brute",
+      "totalRevenue": "CA total (historique)",
       "stockValuePurchase": "Valeur stock (achat)",
       "stockValueSelling": "Valeur stock (vente)",
-      "totalSales": "Ventes totales"
+      "vsPreviousPeriod": "par rapport à la période précédente"
     },
-    "salesByDay": {
-      "title": "Ventes par jour",
-      "empty": "Aucune vente enregistrée."
+    "trend": {
+      "new": "Nouveau",
+      "vsPreviousPeriod": "par rapport à la période précédente"
+    },
+    "stockHealth": {
+      "message": "{{lowStock}} médicament(s) en stock bas, {{expiring}} bientôt périmé(s) ou expiré(s).",
+      "cta": "Voir l'inventaire"
+    },
+    "revenueTrend": {
+      "title": "Évolution du chiffre d'affaires",
+      "empty": "Aucune vente sur cette période."
     },
     "topMedicines": {
-      "title": "Médicaments les plus vendus",
+      "title": "Médicaments les plus rentables",
       "empty": "Pas encore de données."
+    },
+    "export": {
+      "button": "Exporter (CSV)",
+      "title": "Rapport d'analyses",
+      "pharmacy": "Pharmacie",
+      "period": "Période",
+      "trendHeader": "Date,Revenu,Ventes",
+      "medicinesHeader": "Médicament,Quantité,Revenu"
     }
   },
   "messages": {
@@ -241,6 +268,16 @@
       "ariaLabel": "Évolution de la note moyenne par mois",
       "reviewCount_one": "({{count}} avis)",
       "reviewCount_other": "({{count}} avis)"
+    },
+    "revenueTrend": {
+      "ariaLabel": "Évolution du chiffre d'affaires sur la période",
+      "tooltipSales_one": "{{count}} vente",
+      "tooltipSales_other": "{{count}} ventes"
+    },
+    "topMedicines": {
+      "ariaLabel": "Médicaments classés par chiffre d'affaires",
+      "tooltipQuantity_one": "{{count}} unité vendue",
+      "tooltipQuantity_other": "{{count}} unités vendues"
     },
     "weeklyVolume": {
       "title": "Volume Hebdomadaire de Patients",

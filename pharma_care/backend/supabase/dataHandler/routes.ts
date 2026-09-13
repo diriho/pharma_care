@@ -442,7 +442,21 @@ router.get("/portal-stats", async (req: Request, res: Response) => {
   }
 });
 
-// Analytics route to fetch counts, inventory value, revenue, and sales trends
+const ANALYTICS_RANGE_DAYS: Record<string, number> = { "7": 7, "30": 30, "90": 90 };
+
+// Percentage change from `previous` to `current`, or null when undefined (no prior baseline).
+function changePct(current: number, previous: number): number | null {
+  if (previous === 0) return current === 0 ? 0 : null;
+  return Math.round(((current - previous) / previous) * 1000) / 10;
+}
+
+function dayKey(iso?: string): string {
+  return (iso || "").slice(0, 10);
+}
+
+// Analytics route to fetch counts, inventory value, revenue, and sales trends.
+// ?range=7|30|90|all selects the reporting window for the period/trend/top-medicines figures
+// (inventory snapshot fields stay all-time regardless of range).
 router.get("/analytics", async (req: Request, res: Response) => {
   try {
     const userId = (req as AuthedRequest).user.id;
@@ -456,6 +470,7 @@ router.get("/analytics", async (req: Request, res: Response) => {
     const sales = (salesRes.data || []) as Sale[];
     const patients = patientsRes.data || [];
     const suppliers = suppliersRes.data || [];
+    const medsById = new Map(meds.map((m) => [m.id, m]));
 
     const inventoryValue = meds.reduce(
       (sum, m) => sum + (m.stock || 0) * (m.purchase_price || 0),
@@ -466,19 +481,77 @@ router.get("/analytics", async (req: Request, res: Response) => {
       0
     );
     const totalRevenue = sales.reduce((sum, s) => sum + (s.total || 0), 0);
-    const salesByDay: Record<string, number> = {};
-    for (const s of sales) {
-      const day = (s.created_at || "").slice(0, 10);
-      if (!day) continue;
-      salesByDay[day] = (salesByDay[day] || 0) + (s.total || 0);
-    }
-    const topMedicines: Record<string, number> = {};
-    for (const s of sales) {
+
+    const days = ANALYTICS_RANGE_DAYS[String(req.query.range)] ?? 30;
+    const isAllTime = req.query.range === "all";
+    const now = Date.now();
+    const periodStart = isAllTime ? -Infinity : now - days * 86_400_000;
+    const previousStart = isAllTime ? -Infinity : now - days * 2 * 86_400_000;
+
+    const currentSales = sales.filter((s) => new Date(s.created_at || 0).getTime() >= periodStart);
+    const previousSales = isAllTime
+      ? []
+      : sales.filter((s) => {
+          const t = new Date(s.created_at || 0).getTime();
+          return t >= previousStart && t < periodStart;
+        });
+
+    const revenue = currentSales.reduce((sum, s) => sum + (s.total || 0), 0);
+    const salesCount = currentSales.length;
+    const previousRevenue = previousSales.reduce((sum, s) => sum + (s.total || 0), 0);
+    const previousSalesCount = previousSales.length;
+
+    let itemRevenue = 0;
+    let itemCost = 0;
+    const medicineStats = new Map<string, { name: string; quantity: number; revenue: number }>();
+    for (const s of currentSales) {
       for (const it of s.items || []) {
-        topMedicines[it.medicine_id] =
-          (topMedicines[it.medicine_id] || 0) + (it.quantity || 0);
+        const qty = it.quantity || 0;
+        const lineRevenue = qty * (it.unit_price || 0);
+        const med = medsById.get(it.medicine_id);
+        itemRevenue += lineRevenue;
+        itemCost += qty * (med?.purchase_price || 0);
+        const entry = medicineStats.get(it.medicine_id) || {
+          name: med?.name || it.name || it.medicine_id,
+          quantity: 0,
+          revenue: 0,
+        };
+        entry.quantity += qty;
+        entry.revenue += lineRevenue;
+        medicineStats.set(it.medicine_id, entry);
       }
     }
+    const grossProfit = itemRevenue - itemCost;
+    const marginPercent = itemRevenue > 0 ? Math.round((grossProfit / itemRevenue) * 1000) / 10 : 0;
+
+    const topMedicines = Array.from(medicineStats.entries())
+      .map(([id, v]) => ({ id, ...v }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 8);
+
+    const trendByDay = new Map<string, { revenue: number; sales: number }>();
+    for (const s of currentSales) {
+      const key = dayKey(s.created_at);
+      if (!key) continue;
+      const entry = trendByDay.get(key) || { revenue: 0, sales: 0 };
+      entry.revenue += s.total || 0;
+      entry.sales += 1;
+      trendByDay.set(key, entry);
+    }
+    let salesTrend: { date: string; revenue: number; sales: number }[];
+    if (isAllTime) {
+      salesTrend = Array.from(trendByDay.entries())
+        .map(([date, v]) => ({ date, ...v }))
+        .sort((a, b) => (a.date < b.date ? -1 : 1));
+    } else {
+      salesTrend = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const key = dayKey(new Date(now - i * 86_400_000).toISOString());
+        const entry = trendByDay.get(key) || { revenue: 0, sales: 0 };
+        salesTrend.push({ date: key, ...entry });
+      }
+    }
+
     const response = {
       counts: {
         medicines: meds.length,
@@ -489,7 +562,18 @@ router.get("/analytics", async (req: Request, res: Response) => {
       inventoryValue,
       retailValue,
       totalRevenue,
-      salesByDay,
+      range: isAllTime ? "all" : String(days),
+      period: {
+        days: isAllTime ? null : days,
+        revenue,
+        salesCount,
+        avgSaleValue: salesCount > 0 ? revenue / salesCount : 0,
+        grossProfit,
+        marginPercent,
+        revenueChangePct: isAllTime ? null : changePct(revenue, previousRevenue),
+        salesCountChangePct: isAllTime ? null : changePct(salesCount, previousSalesCount),
+      },
+      salesTrend,
       topMedicines,
     };
     res.json(response);
