@@ -26,7 +26,6 @@
 - Modernizing the Ecosystem: Brings pharmacies away from paper ledgers or expensive, localized legacy software to an affordable, unified, and always-accessible cloud solution.
 - Regulatory Readiness: Makes compliance and audits a breeze by standardizing data collection (NIF/RC) and enabling instant data exports.
 
-<img src="./pharma_care/DEMO/demo5.png" alt="Pharmacy Portal" width="600" height="400">
 
 ## Architecture
 
@@ -67,16 +66,12 @@ Visit http://localhost:5173 — sign up to create a pharmacy, then explore the d
 - **Landing page** — services overview (POS, inventory, patients, suppliers, analytics, alerts) with Pharma Core branding.
 - **Signup / Login** — collects all pharmacy onboarding fields (Nom, Adresse, Commune, Province, Téléphone, Devise FBU, NIF, RC, alertes).
 - **Dashboard** — per-pharmacy isolated tables for POS, inventory, patients, suppliers, and restock orders. Stocks update live on sale and reception.
- <img src="./pharma_care/DEMO/demo1.png" alt="Login page" width="300" height="500">
-
 - **Alerts** — backend computes low-stock and expiring-soon alerts from your seuils; surfaced in the dashboard bell.
 - **JSON export** — full history download from the sidebar or settings page.
 - **Logout & Delete account** — both available from the dashboard sidebar.
 - **Language switch** - french and English both available 
 - **Dark/Light Mode** - pages night mode integration
-
-<img src="./pharma_care/DEMO/demo6.png" alt="Notification Bar" width="600" height="400">
-
+<img src="./pharma_care/DEMO/analytics.png" alt="Pharmacy revenue card" width="600" height="400">
 
 ## Tech Stack
 - **Frontend**: React 18.3 + Vite + TypeScript + React Compiler.
